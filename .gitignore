@@ -1,0 +1,24 @@
+# Data: never commit datasets
+data/*
+!data/raw/
+!data/processed/
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Env / secrets
+.venv/
+.env
+
+# Python / Jupyter
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+
+# Local artefacts
+chroma/
+catboost_info/

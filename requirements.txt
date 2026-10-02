@@ -1,0 +1,16 @@
+pandas
+numpy
+scikit-learn
+lightgbm
+xgboost
+shap
+matplotlib
+seaborn
+plotly
+ydata-profiling
+jupyter
+ipykernel
+streamlit
+anthropic
+python-dotenv
+chromadb
