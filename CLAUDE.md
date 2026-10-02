@@ -80,6 +80,22 @@ Notebook rules:
 Environment: `.venv` (Python 3.13), Jupyter kernel `dlw-datathon`. API key goes in `.env`
 (copy `.env.example`). Run Python as `.venv/bin/python`.
 
+## Team git workflow
+
+We work as a team on GitHub. When work is split, every change goes through a branch and a PR:
+
+- `main` always runs. Nobody pushes to it directly; merge via PR after a teammate
+  (or at least a Restart & Run All) checks it.
+- Branch names: `feat/<thing>`, `fix/<thing>`, `exp/<idea>` (e.g. `feat/features-time-lags`).
+  Short-lived: merge within a few hours, then pull `main` and branch again.
+- **Notebooks don't merge.** Two people editing the same `.ipynb` gives unreadable JSON
+  conflicts. So: one person owns `notebooks/submission.ipynb`; everyone else writes
+  functions in `src/` (one file per area, e.g. `src/features.py`, `src/agent.py`) and
+  scratch notebooks named `notebooks/scratch_<name>.ipynb`. The owner pulls the
+  functions into the main notebook.
+- Pull `main` before starting a branch; rebase or merge `main` in before opening a PR.
+- Never commit data, `.env`, or large model files.
+
 ## Working style
 
 - The user is a Year 2 Economics & Data Science student. **They own problem framing,

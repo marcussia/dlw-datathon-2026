@@ -80,8 +80,8 @@ def explain(
 
 def _py(v):
     """Convert numpy scalars to plain Python so the dict is JSON-serialisable."""
+    if pd.api.types.is_scalar(v) and pd.isna(v):  # NaN is not valid JSON; use null
+        return None
     if isinstance(v, np.generic):
         return v.item()
-    if pd.isna(v):
-        return None
     return v if isinstance(v, (int, float, str, bool)) else str(v)

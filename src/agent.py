@@ -136,6 +136,8 @@ class DataAgent:
         self.effort = effort
         self.client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY
         self.trace: list[dict] = []
+        # Model-ready features, built once so every tool sees the same dtypes/categories.
+        self.X = prepare_X(df[self.feature_cols]) if self.feature_cols else None
 
     # ---- tools -----------------------------------------------------------
     def run_pandas_query(self, expression: str):
@@ -144,13 +146,22 @@ class DataAgent:
         result = eval(expression, {"__builtins__": SAFE_BUILTINS}, {"df": self.df, "pd": pd, "np": np})
         return _to_jsonable(result)
 
+    def _key(self, row_id):
+        return row_id if row_id in self.X.index else type(self.X.index[0])(row_id)
+
     def _row_frame(self, row_id=None, features=None) -> pd.DataFrame:
         if row_id is not None:
-            key = row_id if row_id in self.df.index else type(self.df.index[0])(row_id)
-            X = self.df.loc[[key], self.feature_cols]
-        else:
-            X = pd.DataFrame([{c: (features or {}).get(c, np.nan) for c in self.feature_cols}])
-        return prepare_X(X)
+            return self.X.loc[[self._key(row_id)]]
+        # Hypothetical row: match training dtypes, or LightGBM rejects the categoricals.
+        features = features or {}
+        cols = {}
+        for c in self.feature_cols:
+            v = features.get(c, np.nan)
+            if isinstance(self.X[c].dtype, pd.CategoricalDtype):
+                cols[c] = pd.Categorical([v], categories=self.X[c].cat.categories)
+            else:
+                cols[c] = pd.to_numeric(pd.Series([v]), errors="coerce").astype(float)
+        return pd.DataFrame(cols)
 
     def predict(self, row_id=None, features=None):
         X = self._row_frame(row_id, features)
@@ -161,12 +172,11 @@ class DataAgent:
         return out
 
     def explain(self, row_id=None, top_n: int = 8):
-        X = prepare_X(self.df[self.feature_cols])
-        if row_id is not None:
-            row_id = row_id if row_id in X.index else type(X.index[0])(row_id)
-        res = shap_explain(self.model, X, row=row_id, top_n=top_n, plot=False)
-        if res["row"] is not None:
-            return res["row"]
+        if row_id is not None:  # SHAP for one row only: fast on any dataset size
+            key = self._key(row_id)
+            return shap_explain(self.model, self.X.loc[[key]], row=key, top_n=top_n, plot=False)["row"]
+        X = self.X.sample(min(len(self.X), 5000), random_state=0)  # global importance on a sample
+        res = shap_explain(self.model, X, top_n=top_n, plot=False)
         return res["global_importance"].head(top_n).to_dict(orient="records")
 
     def make_chart(self, kind: str, x: str, y: str | None = None, agg: str = "mean", title: str | None = None):

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import warnings
+
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
@@ -34,6 +36,8 @@ def baseline(
     drop: ID / leakage columns to exclude from features.
     time_col: if given, split by time (last `test_size` fraction = validation)
               instead of randomly. Use this whenever the data has a time order.
+    15% of the training rows (the latest 15% for a time split) are held back for
+    early stopping, so validation metrics stay honest.
     Returns dict with model, X_train, X_val, y_train, y_val, val_pred, metrics.
     """
     if task not in ("classification", "regression"):
@@ -56,14 +60,29 @@ def baseline(
             X, y, test_size=test_size, random_state=random_state, stratify=stratify
         )
 
+    # Early stopping uses its own slice of the training data, so the validation
+    # metrics below come from rows the model never saw during fitting.
+    if time_col:
+        es_cut = int(len(X_train) * 0.85)
+        X_fit, X_es, y_fit, y_es = X_train.iloc[:es_cut], X_train.iloc[es_cut:], y_train.iloc[:es_cut], y_train.iloc[es_cut:]
+    else:
+        stratify = y_train if task == "classification" else None
+        X_fit, X_es, y_fit, y_es = train_test_split(
+            X_train, y_train, test_size=0.15, random_state=random_state, stratify=stratify
+        )
+
     base_params = {"n_estimators": 500, "learning_rate": 0.05, "random_state": random_state, "verbose": -1}
     base_params.update(params or {})
     model = (lgb.LGBMClassifier if task == "classification" else lgb.LGBMRegressor)(**base_params)
-    model.fit(
-        X_train, y_train,
-        eval_X=X_val, eval_y=y_val,
-        callbacks=[lgb.early_stopping(50, verbose=False)],
-    )
+    with warnings.catch_warnings():
+        # eval_set is deprecated in LightGBM 4.7, but its replacement (eval_X/eval_y)
+        # does not label-encode string targets like "yes"/"no" and crashes.
+        warnings.simplefilter("ignore", (FutureWarning, DeprecationWarning, UserWarning))
+        model.fit(
+            X_fit, y_fit,
+            eval_set=[(X_es, y_es)],
+            callbacks=[lgb.early_stopping(50, verbose=False)],
+        )
     model.feature_cols_ = list(X.columns)  # LightGBM renames columns internally (spaces -> _)
 
     if task == "classification":
@@ -78,7 +97,7 @@ def baseline(
         }
 
     split = "time-based" if time_col else ("stratified random" if task == "classification" else "random")
-    print(f"LightGBM {task} baseline | train {len(X_train):,} / val {len(X_val):,} ({split} split)")
+    print(f"LightGBM {task} baseline | train {len(X_fit):,} + early-stop {len(X_es):,} / val {len(X_val):,} ({split} split)")
     print(f"Best iteration: {model.best_iteration_} | features: {X.shape[1]}")
     for k, v in scores.items():
         if k != "confusion_matrix":
