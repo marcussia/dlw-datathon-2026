@@ -143,7 +143,7 @@ Script: `src/experiments_models.py` (`report` prints this table). Champion = shi
 | blend_lr_dart / lgbm_dart | DART boosting (tree dropout) | 0.2191 / 0.1900 | 0.316 / 0.279 | **0.029 / 0.071** | −0.004 / −0.003 (within-fold) | 6 / 9 | — |
 | lgbm_rank | LambdaRank objective (optimise the ordering directly) | 0.1911 | 0.2709 | 0.073 | −0.0326 | 0 | <0.001 |
 | knn50 | kNN alone | 0.1888 | 0.2646 | 0.0156 | −0.0353 | 0 | <0.001 |
-| lasso_int_all C=0.03 | L1 LR over pairwise products of everything incl. one-hot cats (~700 cols) | (running at time of writing) | | | | | |
+| lasso_int_all C=0.03 | L1 LR over pairwise products of everything incl. one-hot cats (~700 cols) | 0.2112 | 0.2975 | 0.0153 | −0.0189 | 4 | 0.08 |
 
 Side-finding worth a sentence in the report: DART's *within-fold* ranking is nearly as good as the champion's (Δ −0.003 per fold), but
 its pooled OOF PR-AUC collapses to 0.19 because its probability scale drifts from fold to fold (Brier 0.07). Even for a ranking metric,
