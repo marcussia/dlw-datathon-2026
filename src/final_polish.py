@@ -14,7 +14,7 @@ def src(i): return "".join(C[i]["source"])
 def setsrc(i, s): C[i]["source"] = s
 def rep(i, old, new, reason):
     s = src(i); assert old in s, (i, old[:70]); setsrc(i, s.replace(old, new)); CHANGED.append((i, reason))
-def esc(s): return re.sub(r"(?<!\\)\$", r"\\$", s)
+def esc(s): return re.sub(r"(?<!\\)\$", r"\\\\$", s)
 
 # ============================================================ setup: one colour system
 i = find("# Setup", "code")
@@ -36,7 +36,7 @@ rep(i, "We neutralised a data trap (blank values are *never* fraud in training: 
 rep(i, "> - **Ceiling:** about 1 in 6 frauds shows no observable signal; no model catches those (Section 9).",
     "> - **Ceiling:** about 1 in 6 frauds shows no observable signal by our definition; no model catches those (Section 9).\n"
     "> - **Public leaderboard:** the shipped model scored **0.179**; our best upload, **0.184**, was a less-regularised variant we deliberately did not ship (Section 6.3). The gap to cross-validation (0.234) is explained by the test-set shift (Section 2.4).\n\n"
-    "**Pipeline in one line:** raw CSV → clean (fill blanks with training medians/modes) → 29 features → logistic regression → probability → alert if probability × amount > \\$5 → top-3 reason codes.",
+    "**Pipeline in one line:** raw CSV → clean (fill blanks with training medians/modes) → 29 features → logistic regression → probability → alert if probability × amount > \\\\$5 → top-3 reason codes.",
     "leaderboard bullet + one-line pipeline (items 8, 17)")
 
 # ============================================================ D18: Section 1 glance table; 1.2 outcome grid
@@ -59,7 +59,7 @@ rep(i, "**Implications:** we report **fraud dollars caught**", esc("""**The four
 | | Transaction is fraud | Transaction is legitimate |
 |---|---|---|
 | **Flagged** | Caught fraud: the amount is saved, minus one review | False alarm: one review cost (an assumption, see Section 7.3) and an annoyed customer |
-| **Not flagged** | Missed fraud: the full amount is lost (mean \\$571) | Correct pass: no cost |
+| **Not flagged** | Missed fraud: the full amount is lost (mean \\\\$571) | Correct pass: no cost |
 
 **Implications:** we report **fraud dollars caught**"""), "2x2 outcome grid with costs (item 18)")
 
@@ -227,7 +227,7 @@ setsrc(i, md(esc("""
 ### 7.1 Can we trust the model's percentages, and where should the alarm go?
 **Charts (top):** we sort all transactions by the model's fraud estimate and split them into 10 equal groups (deciles), from lowest risk (1) to highest risk (10). Left: for each group, the green bar is the fraud rate the model *predicted* and the orange bar is the fraud rate that *actually happened*. Right: the same ten groups as points on a predicted-vs-actual plot with both axes on a log scale, so groups 1–9 are readable; honest percentages sit on the diagonal.
 
-**Chart (bottom):** the precision–recall curve. Reading left to right, we flag more and more transactions; the curve shows, at each point, the share of flags that are real fraud (precision) against the share of all frauds caught (recall). A curve further up and to the right is better; the area under it is PR-AUC, the competition's score. Guessing is a flat line at the base rate. Two points are marked on the shipped model's curve: its best yes/no cut-off (highest F1), and the operating point of the \\$5 expected-loss rule from Section 7.3.
+**Chart (bottom):** the precision–recall curve. Reading left to right, we flag more and more transactions; the curve shows, at each point, the share of flags that are real fraud (precision) against the share of all frauds caught (recall). A curve further up and to the right is better; the area under it is PR-AUC, the competition's score. Guessing is a flat line at the base rate. Two points are marked on the shipped model's curve: its best yes/no cut-off (highest F1), and the operating point of the \\\\$5 expected-loss rule from Section 7.3.
 
 **Table:** what happens if we raise an alarm at different cut-offs (thresholds), from 2% to 50%.
 """))["source"]); CHANGED.append((i, "7.1 intro: colours, reliability panel, PR-curve how-to-read (items 10, 11, 15)"))
@@ -264,7 +264,7 @@ ax.scatter([rc[k]], [pr[k]], color=MODEL_C, edgecolor=SHIP_EDGE, s=70, zorder=4,
 rule_flag = p_best * train.transaction_amount.to_numpy() > 5.0     # the $5 review cost set as REVIEW_COST in Section 7.3; same value
 prec_rule = (rule_flag & (y.to_numpy() == 1)).sum() / rule_flag.sum(); rec_rule = (rule_flag & (y.to_numpy() == 1)).sum() / (y == 1).sum()
 ax.scatter([rec_rule], [prec_rule], color=FRAUD_C, edgecolor=SHIP_EDGE, marker="D", s=70, zorder=4,
-           label=f"operating point, p x amount > \\$5: precision {prec_rule:.3f}, case recall {rec_rule:.3f}")
+           label=f"operating point, p x amount > \\\\$5: precision {prec_rule:.3f}, case recall {rec_rule:.3f}")
 ax.set_xlabel("recall (share of all frauds caught)"); ax.set_ylabel("precision (share of flags that are fraud)")
 ax.set_title("Precision-recall curves on out-of-fold predictions"); ax.set_ylim(0, 1); ax.legend(frameon=False, fontsize=9)
 [ax.spines[s].set_visible(False) for s in ("top", "right")]
@@ -274,7 +274,7 @@ plt.tight_layout(); plt.show()
 ''')
 C[i + 1:i + 1] = [new_pr]; CHANGED.append((i + 1, "new PR-curve cell with best-F1 and operating points (item 15)"))
 i = find("**What we found**\n- **The percentages can be trusted.**", "markdown")
-rep(i, "- **There's no single \"right\" alarm level.**", "- **The precision–recall curve** (bottom chart) shows the shipped model above the baseline at every recall; the \\$5 rule's operating point sits far to the right of the best-F1 point because it is chosen on money, not on F1.\n- **There's no single \"right\" alarm level.**", "7.1 findings: PR-curve bullet (item 15)")
+rep(i, "- **There's no single \"right\" alarm level.**", "- **The precision–recall curve** (bottom chart) shows the shipped model above the baseline at every recall; the \\\\$5 rule's operating point sits far to the right of the best-F1 point because it is chosen on money, not on F1.\n- **There's no single \"right\" alarm level.**", "7.1 findings: PR-curve bullet (item 15)")
 
 # ============================================================ A6: 7.2 pooled lift
 i = find("# 7.2 Robustness: inject extra blanks", "code")
@@ -305,14 +305,14 @@ fig, ax = plt.subplots(figsize=(8, 4.2))
 ax.plot(100 * x_el, 100 * y_el, color=MODEL_C, lw=2, label="rank by probability x amount (ours)")
 ax.plot(100 * x_p, 100 * y_p, color=TEST_C, lw=2, ls="--", label="rank by probability alone")
 ax.plot([0, 100], [0, 100], color=TRAIN_C, lw=1, ls=":", label="random flagging")
-marks = [("p x amount > \\$5 (ours)", p_best * amt > c, FRAUD_C, "D"),
-         ("amount > \\$500 rule", amt > 500, SHIP_EDGE, "s"),
-         ("baseline LGBM, p x amount > \\$5", oof_base * amt > c, TEST_C, "^")]
+marks = [("p x amount > \\\\$5 (ours)", p_best * amt > c, FRAUD_C, "D"),
+         ("amount > \\\\$500 rule", amt > 500, SHIP_EDGE, "s"),
+         ("baseline LGBM, p x amount > \\\\$5", oof_base * amt > c, TEST_C, "^")]
 for name, fl, colour, mk in marks:
     ax.scatter([100 * fl.mean()], [100 * amt[fl & is_fraud].sum() / total_fraud_dollars], color=colour, marker=mk, s=80, zorder=4,
-               edgecolor=SHIP_EDGE, label=f"{name}: flags {100 * fl.mean():.1f}%, catches {100 * amt[fl & is_fraud].sum() / total_fraud_dollars:.1f}% of fraud \\$")
+               edgecolor=SHIP_EDGE, label=f"{name}: flags {100 * fl.mean():.1f}%, catches {100 * amt[fl & is_fraud].sum() / total_fraud_dollars:.1f}% of fraud \\\\$")
 ax.set_xlim(0, 40); ax.set_ylim(0, 100); ax.set_xlabel("% of transactions flagged (disruption)"); ax.set_ylabel("% of fraud dollars caught (benefit)")
-ax.set_title("Disruption vs benefit: the \\$500 rule sits near the frontier at 10.6%; our rule flags more and nets more"); ax.legend(frameon=False, fontsize=8, loc="lower right")
+ax.set_title("Disruption vs benefit: the \\\\$500 rule sits near the frontier at 10.6%; our rule flags more and nets more"); ax.legend(frameon=False, fontsize=8, loc="lower right")
 [ax.spines[s].set_visible(False) for s in ("top", "right")]
 plt.tight_layout(); plt.show()
 # What would ranking by p x amount catch at the $500 rule's flag rate? (honest like-for-like at 10.6%)
@@ -346,7 +346,7 @@ rep(j, '''# NOTE(Germaine): if any future candidate uses class weights or resamp
 # otherwise p x amount misprices every alert. The shipped LR needs none: no weights, reliability curve ~ diagonal
 # (Section 7.1), and isotonic recalibration made Brier worse in 5x5 CV runs, so it is not applied.''', "neutral NOTE (item 1)")
 i = find("**What we found**\nWe compared strategies by **money saved per 10,000 transactions**", "markdown")
-rep(i, "- **If the fraud team is short-staffed**", "- **Disruption vs benefit (second chart):** at the \\$500 rule's own flag rate (10.6%) it sits close to the frontier, so a dollar rule is a strong cheap baseline; our rule flags more (17.0%) and converts that into more fraud dollars caught and more net savings at the \\$5 review cost (figures printed under the chart).\n- **If the fraud team is short-staffed**", "7.3 findings: honest gains-chart caption (item 16)")
+rep(i, "- **If the fraud team is short-staffed**", "- **Disruption vs benefit (second chart):** at the \\\\$500 rule's own flag rate (10.6%) it sits close to the frontier, so a dollar rule is a strong cheap baseline; our rule flags more (17.0%) and converts that into more fraud dollars caught and more net savings at the \\\\$5 review cost (figures printed under the chart).\n- **If the fraud team is short-staffed**", "7.3 findings: honest gains-chart caption (item 16)")
 
 # ============================================================ C10/C12: 8.1 colours, family view, hour-of-day chart
 i = find("### 8.1 Which signals matter most?", "markdown")
@@ -411,7 +411,7 @@ Using the 10% alarm level from Section 7, for each country we check:
 
 **Charts:** two panels in the same country order: honest customers wrongly flagged (left) and fraud caught (right). Singapore and Indonesia are outlined; the dashed line is the figure across all customers.
 
-Then the same table under the rule we actually recommend (probability × amount > \\$5, Section 7.3), and finally we retrain the model **without the country column** to see whether we need it. This follows Singapore's financial regulator's fairness principles (MAS FEAT, principles 1–3).
+Then the same table under the rule we actually recommend (probability × amount > \\\\$5, Section 7.3), and finally we retrain the model **without the country column** to see whether we need it. This follows Singapore's financial regulator's fairness principles (MAS FEAT, principles 1–3).
 """))["source"]); CHANGED.append((i, "8.3 intro: two panels + rule-based table (item 13)"))
 i = find("# 8.3 Fairness by country", "code")
 rep(i, '''overall_fpr = 100 * (p_best[y.to_numpy() == 0] >= THRESHOLD).mean()
@@ -453,7 +453,7 @@ display(Markdown(f"Under the recommended rule, honest customers are wrongly flag
                  f"and the rule catches {fair_rule.loc['SG', 'recall (cases)']:.0%} of SG fraud cases ({fair_rule.loc['SG', 'fraud $ caught %']:.0f}% of SG fraud dollars)."))''',
     "8.3 two-panel chart (FPR + recall, SG/ID outlined) and fairness table under the recommended rule (item 13)")
 i = find("**What we found**\n- **Honest customers in some countries get flagged far more often:**", "markdown")
-rep(i, "- **Removing country doesn't hurt in our tests:**", "- **Under the rule we actually recommend** (probability × amount > \\$5), the by-country gap is recomputed in the table above; the printed line states the ID-vs-SG ratio under that rule so the fairness claim rests on the policy we propose, not only on a flat cut-off.\n- **Removing country doesn't hurt in our tests:**", "8.3 findings: rule-based fairness (item 13)")
+rep(i, "- **Removing country doesn't hurt in our tests:**", "- **Under the rule we actually recommend** (probability × amount > \\\\$5), the by-country gap is recomputed in the table above; the printed line states the ID-vs-SG ratio under that rule so the fairness claim rests on the policy we propose, not only on a flat cut-off.\n- **Removing country doesn't hurt in our tests:**", "8.3 findings: rule-based fairness (item 13)")
 
 # ============================================================ A5/A7/E20: Section 9
 i = find("## 9. Limitations and next steps", "markdown")
