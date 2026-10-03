@@ -27,3 +27,12 @@ CSV uploads: 100 allowed. Notebook uploads: 1 per 2h.
 Ship LR alone or keep the blend? They're tied on CV. LR leads on the public set, and it's simpler
 with exact per-row reason codes (good for the 40% understanding mark). The blend has CV
 test-like-slice support (+0.008, 17/25 folds).
+
+## Notebook uploads (1 per 2h)
+
+| Version | Time (3 Oct) | Contents | Result | Hash |
+|---|---|---|---|---|
+| 1 | 16:01 | prediction.ipynb + model.pkl (blend LR + LightGBM) | **passed** · reference-CSV comparison: "not applicable" | b651eaab4d |
+
+A working submission is banked. Later model changes only re-upload `model.pkl` (same notebook,
+same 29 features).
