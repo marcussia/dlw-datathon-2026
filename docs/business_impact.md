@@ -27,7 +27,7 @@ notebook).
 
 ## Key chart
 
-![Net savings by policy](business_impact_chart.png)
+![Net savings by policy](money_saved_by_strategy.png)
 
 | model | policy | % flagged | fraud cases | fraud $ | saved / 10k txns |
 |---|---|---|---|---|---|
