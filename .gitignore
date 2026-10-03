@@ -28,5 +28,5 @@ catboost_info/
 *.pkl
 notebooks/submission.csv
 submission.csv
-notebooks/business_impact_chart.png
+notebooks/money_saved_by_strategy.png
 logs/
