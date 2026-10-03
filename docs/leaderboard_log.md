@@ -52,3 +52,8 @@ but **0.0278 publicly** when removed: they carry over to the test distribution a
 not less. That rules out "a simpler model travels better". Ideas A (blank-field flags, at most
 +0.0002 even on train) and C (drop `big_old`, 99.9% same ranking) weren't uploaded because they
 couldn't move the score.
+
+## Team position vs shipped model (4 Oct)
+The board shows a team's **best upload**. Ours is **0.18418 (rank 37 at 4 Oct morning)**, from Germaine's pre-registered
+probe F (logistic regression, C=100, uploaded 3 Oct 17:39), which was **not shipped**: CV 0.2244 vs 0.2341, stress-test
+loss −0.025 vs −0.010. The shipped model's own upload is #364, 0.17882. Notebook Section 6.1 explains this.
