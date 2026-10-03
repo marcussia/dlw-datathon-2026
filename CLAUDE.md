@@ -1,69 +1,61 @@
 # DLW Club Datathon 2026: project brief
 
-NTU Deep Learning Week (DLW) Club Datathon, weekend of Sat 3 – Sun 4 Oct 2026.
-Problem statements and datasets are released at kickoff. Until the brief is in
-`docs/`, nothing here is solution-specific.
+NTU Deep Learning Week (DLW) Club Datathon, Sat 3 – Sun 4 Oct 2026. The official brief
+is in `docs/` (PDF + summary in `docs/brief.md`) and **overrides everything here**.
 
-## Event and judging
+## Event and judging (official)
 
-Assume last year's rubric unless the official brief says otherwise:
-
-| Criterion | Weight |
-|---|---|
-| Product Value / Functionality | 30% |
-| Technical Accomplishment | 30% |
-| Completeness | 20% |
-| Creativity / Innovation | 10% |
-| Presentation | 10% |
-
-Last year's submission was an **8-minute YouTube video** plus a **GitHub repo with a SINGLE
-Jupyter notebook**, and **only the notebook was marked**. So the notebook must be clean and
-well-structured, with markdown explanations and outputs left visible. It has to read well
-on its own, without the video.
-
-Likely sponsors: Micron, TikTok, Jane Street, OCBC, AI Singapore. Frame the problem in terms
-the sponsor behind it would care about.
-
-When the official brief arrives, save it to `docs/` and update this section if the rules,
-rubric or submission format differ. **The official brief overrides everything here.**
+- Two tracks, pick one. **Track 1:** campus energy consumption, a regression scored on
+  RMSE / MAE / R². **Track 2:** fraud detection, an imbalanced classification scored on
+  PR-AUC / F1 / Recall.
+- **Round 1 = 60% model score on a hidden private test set + 40% understanding**
+  (the problem, why this model, the model's assumptions), judged from the notebook.
+- **Deadline Sun 4 Oct 11:30 AM.** Finalists present **from the notebook** at a booth
+  (demo + Q&A, slides optional). **No video.**
+- Deliverables: **one .ipynb**, **model.pkl** (`joblib.dump((model, feature_names))`),
+  **1-page technical report PDF**, **requirements.txt**.
+- **The notebook must run end to end in clean Google Colab. Any execution error can mean
+  disqualification.**
 
 ## Strategy
 
-1. **Problem first, data second.** Read the brief, then answer: who is the user, what
-   decision do they make, how is success measured? Run a quick data feasibility check
-   (is the target present? class imbalance? missing %?), sharpen the problem to fit the
-   data, then **commit** to a one-line problem statement at the top of the notebook.
-2. **Baseline within the first hour.** LightGBM with a proper validation split
-   (`src/baseline.py`), so we are never at zero.
-3. **Improve the model.** Feature engineering, sound validation (time-based split if the
-   data has time order), no leakage, a metric that matches the business cost.
-4. **Agent layer on top of the model, never instead of it.**
-   - Explainer Agent: SHAP values into plain English (core).
-   - Optional: Action Agent (RAG over documents into recommendations).
-   - Optional: chat Q&A tool over the data.
-5. **Hard rule: every number the agent states must come from running code or calling the
-   model, never from the LLM's own head.** Tool calls are logged in `DataAgent.trace` so
-   the notebook can show this. It is part of the pitch.
-6. **"So what?" section** with business impact in $ / time / risk and the assumptions
-   stated.
-7. **The last ~25% of time** goes on notebook polish, the Streamlit demo (`app/`) and the
-   video.
+1. **Pick the track, then commit.** Data feasibility check first (target, imbalance,
+   missing %, time order), then a one-line problem statement at the top of the notebook.
+2. **Baseline within the first hour.** LightGBM with a proper validation split, so we
+   are never at zero. Also a naive baseline (e.g. last value / mean / all-negative) to
+   compare against.
+3. **Improve the model for the private test set, not the public leaderboard.** Validation
+   that mimics the private test (time-based split if the data has time order), no leakage,
+   robustness to edge cases (unseen categories, missing values, out-of-range values).
+   Optimise the official metrics; for Track 2 tune the decision threshold for F1/Recall.
+4. **Explain the choices (40%).** For every step: why this, what it assumes, what would
+   break it. Compare 2–3 models and justify the pick. SHAP for drivers.
+5. **Colab-safe and self-contained.** The submission notebook inlines its code (no
+   `from src...` imports), installs nothing exotic, needs no API key, and writes
+   `model.pkl` + predictions in the required format. `make_features(df)` must work on
+   `test.csv` alone.
+6. **LLM agent layer is optional and not scored.** If we build one, keep it out of the
+   submission notebook's run path (or fully guarded) so it can't break execution. Hard
+   rule still applies: every number an agent states comes from code, logged in
+   `DataAgent.trace`.
+7. **Last ~25% of time:** clean Colab run, 1-page report, requirements.txt, notebook polish
+   for the booth presentation and Q&A.
 
 ## Notebook structure
 
-`notebooks/submission_template.ipynb` follows this order. Keep it:
+The submission notebook follows the brief's pipeline. Keep this order:
 
-Problem → Data overview → Cleaning → EDA → Features → Model → Evaluation →
-Explainability → Agent layer → So what? → Next steps
+Problem → Data overview → Cleaning → EDA → Features (`make_features`) → Baseline →
+Train & compare models → Evaluation → Explainability → Save `model.pkl` →
+Prediction generation (official format) → Limitations and next steps
 
 Notebook rules:
-- One notebook is the deliverable. Helpers in `src/` are fine, but the notebook must
-  show outputs and explain every step in markdown.
-- Each chart gets a one-sentence takeaway.
-- Restart & Run All before submitting, so outputs are fresh and in order.
+- One notebook is the deliverable, and it must run in clean Colab. Use `src/` helpers
+  while exploring, but inline what the final notebook needs.
+- Each chart gets a one-sentence takeaway. Each modelling choice states why and what it
+  assumes, because that's the 40%.
+- Restart & Run All (in Colab) before submitting, so outputs are fresh and in order.
 - Set seeds; never hard-code numbers in markdown that the code doesn't produce.
-- If only the notebook is marked, consider inlining critical `src/` code (or printing
-  it) so graders can see it.
 
 ## Repo layout
 
@@ -74,11 +66,27 @@ Notebook rules:
 - `src/explain.py`: `explain(model, X, row=)` gives global SHAP importance plus a per-row contribution dict
 - `src/agent.py`: `DataAgent(df, model).ask(q)`, a Claude tool-calling agent (tools:
   `run_pandas_query`, `predict`, `explain`, `make_chart`)
-- `app/`: Streamlit demo
-- `docs/`: problem brief, pitch notes, video script
+- `app/`: optional Streamlit demo (not scored)
+- `docs/`: official brief (`brief.md` + PDF), 1-page report draft
 
 Environment: `.venv` (Python 3.13), Jupyter kernel `dlw-datathon`. API key goes in `.env`
 (copy `.env.example`). Run Python as `.venv/bin/python`.
+
+## Team git workflow
+
+We work as a team on GitHub. When work is split, every change goes through a branch and a PR:
+
+- `main` always runs. Nobody pushes to it directly; merge via PR after a teammate
+  (or at least a Restart & Run All) checks it.
+- Branch names: `feat/<thing>`, `fix/<thing>`, `exp/<idea>` (e.g. `feat/features-time-lags`).
+  Short-lived: merge within a few hours, then pull `main` and branch again.
+- **Notebooks don't merge.** Two people editing the same `.ipynb` gives unreadable JSON
+  conflicts. So: one person owns `notebooks/submission.ipynb`; everyone else writes
+  functions in `src/` (one file per area, e.g. `src/features.py`, `src/agent.py`) and
+  scratch notebooks named `notebooks/scratch_<name>.ipynb`. The owner pulls the
+  functions into the main notebook.
+- Pull `main` before starting a branch; rebase or merge `main` in before opening a PR.
+- Never commit data, `.env`, or large model files.
 
 ## Working style
 
