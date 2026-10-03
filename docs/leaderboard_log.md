@@ -34,9 +34,11 @@ test-like-slice support (+0.008, 17/25 folds).
 | Version | Time (3 Oct) | Contents | Result | Hash |
 |---|---|---|---|---|
 | 1 | 16:01 | prediction.ipynb + model.pkl (blend LR + LightGBM) | **passed** · reference-CSV comparison: "not applicable" | b651eaab4d |
+| 2 | 21:02 | prediction.ipynb + model.pkl (**logistic regression, shipped**) | **passed** · reference CSV: "not applicable" | c7ef347512 |
 
-A working submission is banked. Later model changes only re-upload `model.pkl` (same notebook,
-same 29 features).
+Version 2 is the graded model as of 3 Oct 9:02 PM: logistic regression, verified locally to reproduce
+leaderboard CSV #364 (0.17882) exactly. Any later upload must pass the same sandbox-style dress
+rehearsal first; a failed run burns a 2h window and may replace a passing version.
 
 ## Context: the top of the leaderboard (3 Oct, ~4:30 PM)
 Rank 1 is **0.19010** (achieved 12:22 PM). Our best (LR, 0.17882) is 0.011 behind, which is
