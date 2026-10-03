@@ -54,9 +54,25 @@ pd.DataFrame({"prediction": preds}).to_csv("<TEAM>_Datathon 2026_Track <N>_Predi
 - **Any execution error during evaluation may result in disqualification.**
 - Partial submissions get partial marks; submit something that runs rather than nothing.
 
+## Track 2 briefing slides (opening ceremony, 3 Oct)
+- Name: **TrustGuard: Financial Fraud Detection**. Challenge: "Predict the probability
+  that a financial transaction is fraudulent, given historical transaction data."
+  Classification with significant class imbalance. Data: labelled train, unlabelled test.
+- **Golden rule: output probabilities, not just binary labels.** (Resolves the old open
+  question.) The organisers' script calls `model.predict(...)`, so the saved model's
+  `predict` must return P(fraud), not 0/1 labels.
+- First-round scoring: **Model performance 60%** (within it, **PR-AUC 60%**, other metrics
+  40%: F1 and Recall), **Technical proposal 40%**. So PR-AUC alone is about 36% of the total.
+- Final-round rubric: technical solution & methodology · results & analysis · innovation &
+  creativity · real-world applicability · prototype / implementation quality · Q&A &
+  defence of approach.
+- Special focus for this track: class imbalance · **quality of probability predictions**
+  (calibration) · precision/recall trade-offs · false-positive & false-negative impact ·
+  practical fraud-prevention use.
+
 ## Open questions for the organisers
-- Track 2: should `prediction` be a 0/1 label or a probability? PR-AUC needs scores,
-  F1/Recall need labels, and `model.predict` uses a 0.5 threshold by default.
+- Track 2: with probability outputs, **what threshold do they use to compute F1 and
+  Recall** (0.5? best-F1?). This decides whether calibrated probabilities hurt F1/Recall.
 - Is the private test set a later time period (Track 1)? That decides whether lag
   features are usable from `test.csv` alone.
 - Exact output filename / extension (`.csv`?) and team name format.
