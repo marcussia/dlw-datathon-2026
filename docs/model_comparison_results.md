@@ -267,3 +267,21 @@ full feature pipeline, score out-of-fold; 5-fold, seed 2026). This is a test har
 Reading: **no scenario crashes** (the clipping in `make_features` is what makes the garbage and ×10 rows harmless), degradation is
 graceful everywhere, and LR stays at or above the blend in absolute PR-AUC in 10 of 12 scenarios. The only sizeable drop (new device
 forced on) is injected noise into the strongest signal — no model can be immune to that. Decision to ship LR stands.
+
+## Pre-registered public-leaderboard probes (3 Oct 17:32–17:41; 10 of 100 CSV uploads; board counts best score per team)
+Rule fixed before uploading: switch the shipped model only if a variant beats A by > 0.02 (≈ noise on ~200 positives).
+
+| Probe | Public PR-AUC | vs A | CV 5×5 | Stress "all together" Δ | Read |
+| --- | --- | --- | --- | --- | --- |
+| **A** LR C=0.2 (shipped) | **0.17882** | — | 0.2289 | −0.010 | reproduces upload #364 to the digit → pipeline deterministic |
+| B LR C=0.05 | 0.16207 | −0.017 | | | over-regularised |
+| C LR C=1 | 0.18203 | +0.003 | | | |
+| E LR C=5 | 0.18284 | +0.004 | 0.2242 | −0.024 | +0.005 public, −0.009 CV, fragile (unseen cats −0.017) |
+| F LR C=100 | 0.18418 | +0.005 | 0.2244 | −0.025 | same; rejected |
+| D LR without `country` | 0.16616 | −0.013 | 0.2352 (3×5, +0.001) | | `country` is free in CV but worth ~0.013 on the test set — say so honestly in the fairness section |
+| G LR on 10 raw columns | 0.15107 | **−0.028** | 0.213 | | **engineered features add +0.028 on the test set (+18%)** |
+| H LightGBM alone | 0.16670 | −0.012 | 0.222 | | LR ≥ LightGBM holds on the test set |
+| I LR without time-of-day | 0.16286 | −0.016 | 0.216 | | time-of-day carries real test signal |
+| J LR without absolute-amount features | 0.18413 | +0.005 | 0.2326 (= A) | −0.010 | defensible alternative: ties A everywhere, slightly more robust to amount shifts; not switched (chosen on public set) |
+
+**Decision: A stays.** Public rank 15/32 at the time; #1 = 0.190 (gap 0.006, inside noise).
