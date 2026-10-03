@@ -9,6 +9,7 @@ CSV uploads: 100 allowed. Notebook uploads: 1 per 2h.
 | 336 | 15:48 | submission.csv | blend LR + LightGBM (shipped in model.pkl) | 0.2351 | 0.16862 | 18 | fbcedfa53e |
 | 362 | 15:54 | submission_baseline_lgbm10.csv | §5 baseline LightGBM, 10 raw features | 0.1952 | 0.16046 | 18 | 6010e5afc6 |
 | 364 | 15:54 | submission_logreg_v2.csv | logistic regression, v2 features | 0.2341 | **0.17882** | **13** | 2ec43bc56a |
+| 748 | 17:44 | ideaB_simple_LR.csv | logistic regression, basic columns only (no engineered features) | 0.2198 | 0.15107 | 15 | 62bacd253a |
 
 ## What it tells us
 - **Pipeline works end to end** on the portal: format accepted, scored, hash matches our file.
@@ -42,3 +43,10 @@ Rank 1 is **0.19010** (achieved 12:22 PM). Our best (LR, 0.17882) is 0.011 behin
 within public-set noise. This fits the conclusion from the model comparison: the dataset's
 signal ceiling is around 0.24 on CV, about 0.18–0.19 on the public set, and every team is
 hitting it.
+
+## Idea B test (pre-registered rule: >= 0.185 switch, < 0.179 keep)
+The simple LR scored **0.15107**, so we keep the shipped LR. The engineered features cost 0.0144 on CV
+but **0.0278 publicly** when removed: they carry over to the test distribution and matter more there,
+not less. That rules out "a simpler model travels better". Ideas A (blank-field flags, at most
++0.0002 even on train) and C (drop `big_old`, 99.9% same ranking) weren't uploaded because they
+couldn't move the score.
