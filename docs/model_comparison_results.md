@@ -243,3 +243,27 @@ a perfectly uniform transaction hour, hand-set country shares, fraud rates stepp
 uniformly across 9 columns after generation. Verdict: **organiser-generated synthetic data**; the private set is most likely the same
 generator with a different seed plus injected edge cases. Consequences: no external data can help (confirmed empirically: pseudo-
 labelling and importance weighting were neutral); robustness to malformed/out-of-range rows (clipping, PR #13) is the right defence.
+
+## Simulated private sets: stress test (3 Oct evening, `src/stress_test.py`)
+The data is organiser-synthetic, so we cannot obtain the private set — but we can simulate the kinds of "different observations and
+edge cases" it may contain and measure how each model's ranking degrades on **real labels** (perturb raw validation rows, re-run the
+full feature pipeline, score out-of-fold; 5-fold, seed 2026). This is a test harness, not training data: nothing synthetic is fitted.
+
+| Scenario | LR (shipped) | Δ | LR+LightGBM blend | Δ | LightGBM | Δ |
+| --- | --- | --- | --- | --- | --- | --- |
+| clean | 0.2325 | — | 0.2295 | — | 0.2166 | — |
+| 5% blanks per column | 0.2290 | −0.004 | 0.2271 | −0.002 | 0.2151 | −0.002 |
+| 10% blanks per column | 0.2246 | −0.008 | 0.2240 | −0.006 | 0.2072 | −0.009 |
+| amounts ×3 | 0.2299 | −0.003 | 0.2254 | −0.004 | 0.2139 | −0.003 |
+| amounts ×10 (far beyond the cap) | 0.2295 | −0.003 | 0.2236 | −0.006 | 0.2017 | −0.015 |
+| account age ×2 | 0.2292 | −0.003 | 0.2272 | −0.002 | 0.2149 | −0.002 |
+| account age ×0.5 | 0.2342 | +0.002 | 0.2306 | +0.001 | 0.2179 | +0.001 |
+| busier customers (+2 txns/1h, +5/24h) | 0.2229 | −0.010 | 0.2245 | −0.005 | 0.2115 | −0.005 |
+| new device forced on for +10% of rows | 0.2098 | −0.023 | 0.2085 | −0.021 | 0.1996 | −0.017 |
+| 5% unseen merchant/country/channel | 0.2335 | +0.001 | 0.2293 | 0.000 | 0.2156 | −0.001 |
+| 1% garbage rows (negative amount, hour 99, counts 100, strings) | 0.2315 | −0.001 | 0.2289 | −0.001 | 0.2164 | 0.000 |
+| all together (blanks 5% + ×3 amounts + older accounts + unseen + garbage) | 0.2227 | −0.010 | 0.2243 | −0.005 | 0.2130 | −0.004 |
+
+Reading: **no scenario crashes** (the clipping in `make_features` is what makes the garbage and ×10 rows harmless), degradation is
+graceful everywhere, and LR stays at or above the blend in absolute PR-AUC in 10 of 12 scenarios. The only sizeable drop (new device
+forced on) is injected noise into the strongest signal — no model can be immune to that. Decision to ship LR stands.
