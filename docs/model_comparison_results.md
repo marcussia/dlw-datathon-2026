@@ -232,3 +232,14 @@ so the blend's public shortfall is not the big-spender problem — the public fr
 **Decision (Germaine, 3 Oct ~5 PM, PR #8): ship LR alone**; tie on CV, leads publicly, needs only scikit-learn at inference, exact reason codes.
 Blend stays documented as the runner-up (+0.008 on the CV test-like slice, not confirmed publicly). Rank correlation 0.95 → private
 difference will be small either way.
+
+## Data provenance check (3 Oct evening) — useful for Q&A ("is this real data?")
+Searched Kaggle, HuggingFace, GitHub, UCI and OpenML for this schema (exact column names, the 11 merchant categories, the SG-centred
+10-country list, FR-prefixed ids). **No public dataset matches**; only other 2026 participants' repos turn up. Eight look-alikes
+(Kaggle "Credit Card Fraud Detection 2026", "Financial Fraud Dataset", FraudForge, HF jsbeaudry/fraud_detection, the Nigerian
+transactions set, several GitHub portfolio generators) all differ in columns, size or fraud rate; ULB, IEEE-CIS, PaySim, Sparkov
+and BAF share nothing. Generator fingerprints in the data: hard clips (23 rows at exactly $2.50, 354 accounts pinned at age 4,000),
+a perfectly uniform transaction hour, hand-set country shares, fraud rates stepping cleanly by category, missingness injected
+uniformly across 9 columns after generation. Verdict: **organiser-generated synthetic data**; the private set is most likely the same
+generator with a different seed plus injected edge cases. Consequences: no external data can help (confirmed empirically: pseudo-
+labelling and importance weighting were neutral); robustness to malformed/out-of-range rows (clipping, PR #13) is the right defence.
