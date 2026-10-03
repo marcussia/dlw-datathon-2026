@@ -1,4 +1,4 @@
-# Technical Proposal — TrustGuard (Team TODO_TEAM_NAME)
+# Technical Proposal — TrustGuard (Team Top 4 MCDs)
 
 <!-- One page, five fixed sections per docs/report_format.pdf (~520 words). Numbers match notebooks/submission.ipynb
      (3×5 repeated CV) and docs/leaderboard_log.md. DRAFT — Germaine/Marcus own the framing; edit freely. -->
