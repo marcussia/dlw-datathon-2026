@@ -91,7 +91,7 @@ CatBoost cannot ship. Re-ran the only boosters available in the sandbox, trained
 | LightGBM 3-seed | 0.2215 | 0.3377 | 0.2190 | 0.01526 |
 | XGBoost d3 | 0.2116 | 0.3197 | 0.2106 | 0.01534 |
 | HGB (sklearn) | 0.2087 | 0.3127 | 0.2059 | 0.01532 |
-| **50/50 LR + LightGBM one-hot (`VotingClassifier` soft) — SHIPPED** | **0.2306** | **0.3433** | **0.2306** | **0.01511** |
+| **50/50 LR + LightGBM one-hot (`VotingClassifier` soft) — shipped v1, superseded by LR alone after the public check** | **0.2306** | **0.3433** | **0.2306** | **0.01511** |
 | LR + LightGBM coded | 0.2300 | 0.3441 | 0.2293 | 0.01513 |
 | LR + XGBoost | 0.2261 | 0.3360 | 0.2252 | 0.01516 |
 | (reference, not shippable) LR + CatBoost | 0.2377 | 0.3562 | 0.2367 | 0.01505 |
@@ -128,3 +128,107 @@ Indonesia on a 102-day-old account, new device, 6 txns in the last hour. `src/mo
 | --- | --- | --- |
 | Our blend with **§3 imputation constants** (grocery / SG / card_present / new_device 0) vs our "neutral" fills | 0.2311 vs 0.2306, 11/25 folds, p = 0.75 → identical | **Adopt §3 constants** in `make_features` — one cleaning policy for the whole notebook (`src/models.py` asserts it matches `src/preprocess.py`). |
 | **§5 baseline** (LightGBM 300 trees / 15 leaves, 10 raw features, §3 `clean()`) vs our LR + LightGBM blend | **0.1919 vs 0.2306: +0.0384 PR-AUC (+20%), blend wins 23/25 folds, p = 0.006**; blanks 0.1902 vs 0.2306; Brier 0.0157 vs 0.0151 | The engineered features were rejected in §4 because they were tested with LightGBM only (trees are invariant to log/ratio transforms). For logistic regression they are the whole gain (raw 0.213 → 0.229), and LR is half of the best shippable model. Recommend §4 adopts `make_features` from `src/models.py` (clean + 19 features) and §6/§9 adopt the blend. |
+
+## Round 5: "out of the box" challengers (sandbox-compatible only), same 5×5 folds, platform versions
+Script: `src/experiments_models.py` (`report` prints this table). Champion = shipped LR + LightGBM blend, 0.2311.
+
+| Challenger | Idea | PR-AUC | test-like | Brier | Δ vs champion | wins/25 | p |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| pseudo_neg_blend | add test rows the champion scores < 0.3% as extra legit examples (domain adaptation) | 0.2300 | 0.3289 | 0.0151 | −0.0008 | 9 | 0.69 |
+| elasticnet_lr | L1+L2 logistic regression | 0.2272 | 0.3190 | 0.0151 | −0.0030 | 9 | 0.58 |
+| bagged_lr | random-subspace bagging of LR (50 bags) | 0.2258 | 0.3140 | 0.0151 | −0.0038 | 11 | 0.45 |
+| lasso_int C=0.1 / 0.02 / 0.05 | L1 LR over all pairwise products of numerics+flags (sparse interaction search) | 0.2255 / 0.2234 / 0.2199 | 0.31–0.32 | 0.0152 | −0.005 to −0.010 | 6–8 | 0.2–0.6 |
+| blend_lr_negbag / lgbm_negbag | LightGBM with negative downsampling per tree (all frauds, 30% of legit) | 0.2254 / 0.2157 | 0.326 / 0.318 | 0.0157 / 0.0176 | −0.006 / −0.013 | 4 / 4 | 0.15 / 0.05 |
+| stack_knn_lgbm | StackingClassifier: meta-LR on v2 features + OOF P(fraud) from kNN(50) and LightGBM | 0.2222 | 0.3152 | 0.0152 | −0.0079 | 5 | 0.20 |
+| blend_lr_dart / lgbm_dart | DART boosting (tree dropout) | 0.2191 / 0.1900 | 0.316 / 0.279 | **0.029 / 0.071** | −0.004 / −0.003 (within-fold) | 6 / 9 | — |
+| lgbm_rank | LambdaRank objective (optimise the ordering directly) | 0.1911 | 0.2709 | 0.073 | −0.0326 | 0 | <0.001 |
+| knn50 | kNN alone | 0.1888 | 0.2646 | 0.0156 | −0.0353 | 0 | <0.001 |
+| lasso_int_all C=0.03 | L1 LR over pairwise products of everything incl. one-hot cats (~700 cols) | 0.2112 | 0.2975 | 0.0153 | −0.0189 | 4 | 0.08 |
+
+Side-finding worth a sentence in the report: DART's *within-fold* ranking is nearly as good as the champion's (Δ −0.003 per fold), but
+its pooled OOF PR-AUC collapses to 0.19 because its probability scale drifts from fold to fold (Brier 0.07). Even for a ranking metric,
+a model whose scores mean different things on different data is fragile — calibration is not optional for the private test.
+
+**Conclusion after 5 rounds / ~65 candidates:** every sensible model lands within fold noise of 0.23 under the sandbox constraint.
+The champion stays. Remaining marks are in the write-up, robustness evidence and the Round-2 demo, not in the model.
+
+## Round 5 (3 Oct, after the first public scores): sandbox-compatible challengers vs the shipped blend
+Same 5×5 folds, `.venv-image` versions, `src/experiments_models.py`. Champion = shipped LR + LightGBM blend (0.2311 on these folds).
+
+| Model | PR-AUC | test-like | blanks | Brier | Δ vs champion | wins/25 | p |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **champion (shipped blend)** | **0.2311** | 0.3304 | 0.2310 | 0.0151 | — | — | — |
+| pseudo-negatives from test (p<0.003, 289 rows/fold) | 0.2300 | 0.3289 | 0.2297 | 0.0151 | −0.0008 | 9 | 0.69 |
+| elastic-net LR | 0.2272 | 0.3190 | 0.2272 | 0.0151 | −0.0030 | 9 | 0.58 |
+| bagged LR (50 bags, random subspace) | 0.2258 | 0.3140 | 0.2262 | 0.0151 | −0.0038 | 11 | 0.45 |
+| L1 LR on degree-2 interactions (C=0.1 / 0.02) | 0.2255 / 0.2234 | 0.318 / 0.313 | | 0.0152 | −0.005 / −0.008 | 8 / 6 | 0.62 / 0.22 |
+| LR + LightGBM negative-bagging | 0.2254 | 0.3264 | 0.2248 | 0.0157 | −0.0063 | 4 | 0.15 |
+| stack kNN(50) + LightGBM → LR | 0.2222 | 0.3152 | 0.2222 | 0.0152 | −0.0079 | 5 | 0.20 |
+| LR + LightGBM DART | 0.2191 | 0.3157 | 0.2174 | 0.0291 | −0.0036 | 6 | 0.42 |
+| LightGBM neg-bag / DART / LambdaRank alone | 0.216 / 0.190 / 0.191 | | | | | | |
+| kNN(50) | 0.1888 | 0.2646 | 0.1898 | 0.0156 | −0.0353 | 0 | 0.00 |
+
+Nothing beats the champion; the pre-registered switch rule (clear majority of folds, p<0.1, no loss on test-like/blanks) fires for none.
+
+## LR regularisation / feature-count sweep (Marcus's question after the public scores)
+Hypothesis: the v2 features' CV gain over the raw baseline shrank publicly (+0.04 → +0.018 for LR), so a more regularised or
+smaller LR might transfer better. Same 5×5 folds; Δ is vs the shipped blend.
+
+| LR variant | PR-AUC | test-like | blanks | Δ vs blend | wins/25 | p |
+| --- | --- | --- | --- | --- | --- | --- |
+| **C=0.2 (shipped LR)** | **0.2289** | 0.3214 | 0.2284 | −0.0026 | 10 | 0.66 |
+| C=0.1 | 0.2288 | 0.3207 | 0.2287 | −0.0022 | 10 | 0.65 |
+| C=0.05 | 0.2275 | 0.3172 | 0.2275 | −0.0031 | 9 | 0.54 |
+| C=0.02 | 0.2239 | 0.3114 | 0.2233 | −0.0059 | 7 | 0.36 |
+| C=0.5 | 0.2247 | 0.3154 | 0.2246 | −0.0055 | 9 | 0.38 |
+| drop `country` | 0.2257 | 0.3133 | 0.2252 | −0.0055 | 10 | 0.47 |
+| drop the 11 hand flags | 0.2206 | 0.3095 | 0.2206 | −0.0108 | 5 | 0.09 |
+| v1 features (no v2 interactions) | 0.2201 | 0.3119 | 0.2197 | −0.0110 | 5 | 0.17 |
+| raw-ish (6 numerics + cats + new_device) | 0.2133 | 0.3000 | 0.2140 | −0.0172 | 3 | 0.02 |
+| L1, C=0.1 / 0.05 | 0.2227 / 0.2062 | | | −0.008 / −0.026 | 8 / 1 | 0.24 / 0.00 |
+
+Stronger regularisation or fewer features never helps on any metric, including the test-like weighting. We have no in-sample
+evidence for a "smaller LR transfers better" story; testing it on the public set would mean tuning to the public set.
+
+## How much of the public gap is noise? (bootstrap on OOF predictions, 2,000 resamples)
+| Public-set size | ≈ positives | sd of a single model's PR-AUC | 95% range (blend) | sd of the LR−blend gap | P(LR ahead by ≥0.010) if truly tied |
+| --- | --- | --- | --- | --- | --- |
+| 30% of test (3,600 rows) | 63 | 0.056 | 0.13–0.35 | 0.012 | 0.25 |
+| 50% of test (6,000 rows) | 105 | 0.044 | 0.15–0.32 | 0.009 | 0.20 |
+| whole test (12,000 rows) | 211 | 0.032 | 0.17–0.30 | 0.006 | 0.12 |
+
+The observed public gap (LR 0.1788 vs blend 0.1686) is about one standard deviation of sampling noise and the two rank test rows
+with ρ = 0.95, so it does not separate the models. The CV→public level drop (0.23 → 0.17) is also inside the sampling range of a
+few-thousand-row public set, so some of it may not be shift at all. Both models predict a higher mean risk on test (0.021) than
+the train fraud rate (0.0176), consistent with the adversarial-validation shift in §2d. The test-like weighted CV (0.33) is not a
+proxy for the public level: it re-weights rows, which also changes the effective base rate.
+
+## Drift check: `src/models.py` vs `submission.ipynb` §3–4/§6/§9 vs `prediction.ipynb` (3 Oct, after Marcus's inlining)
+- `make_features` output is identical (DataFrame-equal on train and test, same 29-column order) in all three places; `IMPUTE` identical.
+- LR, LightGBM, blend definitions identical (same hyper-parameters). LR predictions agree to 1e-13.
+- **One difference:** category vocabularies are listed alphabetically in the notebook (`CAT_VOCAB`, from §3b `clean()`) but in
+  frequency order in `src/models.py` (`CATS`). One-hot column order then differs, and LightGBM's `colsample_bytree=0.8` draws
+  different random columns → notebook-trained blend vs src-trained blend: max |Δp| 0.027 on test, rank correlation 0.9988.
+  The banked `model.pkl` was trained from the src order, so **re-running §9 in the notebook does not reproduce the banked pickle
+  exactly.** Harmless for the score (within noise) but worth fixing for reproducibility: either reorder `MERCHANTS` / `COUNTRIES` /
+  `CHANNELS` in §3b and `prediction.ipynb` to the src order (keeps the banked pickle and every logged number exact), or regenerate
+  `model.pkl` from §9 and dress-rehearse it. Marcus's call (notebook owner).
+- LightGBM is deterministic here (two fits under `.venv-image` agree exactly), so once vocab order matches, §9 is fully reproducible.
+
+## Public leaderboard check (3 Oct, from docs/leaderboard_log.md) and the LR-vs-blend decision
+| Model | CV 3×5 | CV 5×5 | Public | Public rank |
+| --- | --- | --- | --- | --- |
+| LR (v2 features) | 0.2341 | 0.2289 | **0.1788** | 13 |
+| LR + LightGBM blend (shipped v1) | 0.2351 | 0.2311 | 0.1686 | 18 |
+| §5 baseline LightGBM, raw | 0.1952 | 0.1919 | 0.1605 | 18 |
+| Leaderboard #1 | | | 0.1901 | 1 |
+
+Noise: bootstrap SE of PR-AUC on a 12k-row sample ≈ 0.030, so LR − blend = 0.010 is ~0.3 SE. Weak evidence, but the only evidence
+from the test distribution. Where the two disagree on test rows (top-2% overlap 0.80): LightGBM-only flags are big-amount/old-account
+(median $934, age 1,648 d, 42% new device); LR-only flags are small-amount/new-device/burst (median $83, 5.1 txns/1h, 73% new device).
+On the shift slice (amount > 2,000 & age > 1,000; 961 test rows) LightGBM is *less* alarmed than LR (0.018 vs 0.029; train rate 1.7%),
+so the blend's public shortfall is not the big-spender problem — the public frauds look burst/new-device-shaped.
+
+**Decision (Germaine, 3 Oct ~5 PM, PR #8): ship LR alone**; tie on CV, leads publicly, needs only scikit-learn at inference, exact reason codes.
+Blend stays documented as the runner-up (+0.008 on the CV test-like slice, not confirmed publicly). Rank correlation 0.95 → private
+difference will be small either way.

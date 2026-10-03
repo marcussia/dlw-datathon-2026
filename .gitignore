@@ -29,3 +29,4 @@ catboost_info/
 notebooks/submission.csv
 submission.csv
 notebooks/business_impact_chart.png
+logs/
