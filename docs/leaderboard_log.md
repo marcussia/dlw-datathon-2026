@@ -36,3 +36,9 @@ test-like-slice support (+0.008, 17/25 folds).
 
 A working submission is banked. Later model changes only re-upload `model.pkl` (same notebook,
 same 29 features).
+
+## Context: the top of the leaderboard (3 Oct, ~4:30 PM)
+Rank 1 is **0.19010** (achieved 12:22 PM). Our best (LR, 0.17882) is 0.011 behind, which is
+within public-set noise. This fits the conclusion from the model comparison: the dataset's
+signal ceiling is around 0.24 on CV, about 0.18–0.19 on the public set, and every team is
+hitting it.
