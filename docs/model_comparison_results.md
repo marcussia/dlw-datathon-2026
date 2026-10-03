@@ -128,3 +128,26 @@ Indonesia on a 102-day-old account, new device, 6 txns in the last hour. `src/mo
 | --- | --- | --- |
 | Our blend with **§3 imputation constants** (grocery / SG / card_present / new_device 0) vs our "neutral" fills | 0.2311 vs 0.2306, 11/25 folds, p = 0.75 → identical | **Adopt §3 constants** in `make_features` — one cleaning policy for the whole notebook (`src/models.py` asserts it matches `src/preprocess.py`). |
 | **§5 baseline** (LightGBM 300 trees / 15 leaves, 10 raw features, §3 `clean()`) vs our LR + LightGBM blend | **0.1919 vs 0.2306: +0.0384 PR-AUC (+20%), blend wins 23/25 folds, p = 0.006**; blanks 0.1902 vs 0.2306; Brier 0.0157 vs 0.0151 | The engineered features were rejected in §4 because they were tested with LightGBM only (trees are invariant to log/ratio transforms). For logistic regression they are the whole gain (raw 0.213 → 0.229), and LR is half of the best shippable model. Recommend §4 adopts `make_features` from `src/models.py` (clean + 19 features) and §6/§9 adopt the blend. |
+
+## Round 5: "out of the box" challengers (sandbox-compatible only), same 5×5 folds, platform versions
+Script: `src/experiments_models.py` (`report` prints this table). Champion = shipped LR + LightGBM blend, 0.2311.
+
+| Challenger | Idea | PR-AUC | test-like | Brier | Δ vs champion | wins/25 | p |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| pseudo_neg_blend | add test rows the champion scores < 0.3% as extra legit examples (domain adaptation) | 0.2300 | 0.3289 | 0.0151 | −0.0008 | 9 | 0.69 |
+| elasticnet_lr | L1+L2 logistic regression | 0.2272 | 0.3190 | 0.0151 | −0.0030 | 9 | 0.58 |
+| bagged_lr | random-subspace bagging of LR (50 bags) | 0.2258 | 0.3140 | 0.0151 | −0.0038 | 11 | 0.45 |
+| lasso_int C=0.1 / 0.02 / 0.05 | L1 LR over all pairwise products of numerics+flags (sparse interaction search) | 0.2255 / 0.2234 / 0.2199 | 0.31–0.32 | 0.0152 | −0.005 to −0.010 | 6–8 | 0.2–0.6 |
+| blend_lr_negbag / lgbm_negbag | LightGBM with negative downsampling per tree (all frauds, 30% of legit) | 0.2254 / 0.2157 | 0.326 / 0.318 | 0.0157 / 0.0176 | −0.006 / −0.013 | 4 / 4 | 0.15 / 0.05 |
+| stack_knn_lgbm | StackingClassifier: meta-LR on v2 features + OOF P(fraud) from kNN(50) and LightGBM | 0.2222 | 0.3152 | 0.0152 | −0.0079 | 5 | 0.20 |
+| blend_lr_dart / lgbm_dart | DART boosting (tree dropout) | 0.2191 / 0.1900 | 0.316 / 0.279 | **0.029 / 0.071** | −0.004 / −0.003 (within-fold) | 6 / 9 | — |
+| lgbm_rank | LambdaRank objective (optimise the ordering directly) | 0.1911 | 0.2709 | 0.073 | −0.0326 | 0 | <0.001 |
+| knn50 | kNN alone | 0.1888 | 0.2646 | 0.0156 | −0.0353 | 0 | <0.001 |
+| lasso_int_all C=0.03 | L1 LR over pairwise products of everything incl. one-hot cats (~700 cols) | (running at time of writing) | | | | | |
+
+Side-finding worth a sentence in the report: DART's *within-fold* ranking is nearly as good as the champion's (Δ −0.003 per fold), but
+its pooled OOF PR-AUC collapses to 0.19 because its probability scale drifts from fold to fold (Brier 0.07). Even for a ranking metric,
+a model whose scores mean different things on different data is fragile — calibration is not optional for the private test.
+
+**Conclusion after 5 rounds / ~65 candidates:** every sensible model lands within fold noise of 0.23 under the sandbox constraint.
+The champion stays. Remaining marks are in the write-up, robustness evidence and the Round-2 demo, not in the model.
