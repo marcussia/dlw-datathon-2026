@@ -4,13 +4,13 @@ Written 4 Oct 2026 so a fresh session (or a teammate) can continue without any c
 
 ## Status: all 20 items DONE, VERIFY DONE, PR open, not merged
 
-- Work lives in `notebooks/submission_v2.ipynb` (91 cells) on branch `feat/notebook-final-polish`.
+- Work lives in `notebooks/submission_v2.ipynb` (88 cells) on branch `feat/notebook-final-polish`.
   `notebooks/submission.ipynb` (86 cells, main at `6cd6461`) is untouched.
 - PR #38: https://github.com/marcussia/dlw-datathon-2026/pull/38 (MERGEABLE / CLEAN vs main at last check).
-- Last commit on the branch: `b2aef0f` "v2: escape $ in matplotlib label strings (removes SyntaxWarnings)".
+- Review pass (4 Oct, early morning): dropped the 6.3 leaderboard chart/section (title contradicted its rows; 6.1 findings restored from main), fixed the PR-curve guessing line (flat at base rate), dropped the 8.1 family chart (contradicted the 8.3 country finding), 8.3/7.3 wording now quotes printed numbers. 34 cells differ from main.
 - In progress: nothing. Remaining: Germaine says "merge" (or Marcus pastes the 38 cells into `submission.ipynb`).
 
-## Items done (spec item -> v2 cells changed)
+## Items done (spec item -> v2 cells changed; cell numbers below are from before the review pass, see `docs/final_polish_changes.md` for the current ones)
 
 Full per-cell table with reasons: `docs/final_polish_changes.md`. Full source of every changed cell: `docs/final_polish_cells_to_paste.md`.
 
@@ -24,8 +24,8 @@ Full per-cell table with reasons: `docs/final_polish_changes.md`. Full source of
 | 6 like-for-like pooled lift in 7.2 | 66, 67 |
 | 7 fraud definition stated in 9 | 85, 87 |
 | 8 exec summary numbers and wording | 0, 6 |
-| 9 new 6.3 public-leaderboard check (table, CV-vs-public chart, justification) | 53, 57, 58, 59, 67 |
-| 10 colour system (LEGIT/FRAUD/MODEL/TRAIN/TEST, black outline = shipped) | 2, 33, 52, 61, 62, 68, 70, 76, 77 |
+| 9 public-leaderboard check | kept as in main (inside the 6.1 findings); the separate 6.3 chart was reviewed and dropped |
+| 10 colour system (LEGIT/FRAUD/MODEL/TRAIN/TEST, black outline = shipped) | see docs/final_polish_changes.md for current cell numbers |
 | 11 6.2 independent y-axes; 7.1 log-log reliability panel | 55, 61, 62 |
 | 12 8.1 feature-family and hour-of-day charts | 76, 77, 78 |
 | 13 8.3 two-panel fairness + table under the p x amount > $5 rule | 82, 83, 84 |
@@ -40,12 +40,12 @@ Full per-cell table with reasons: `docs/final_polish_changes.md`. Full source of
 ## VERIFY (already run in the session that made the changes; re-run if anything is touched)
 
 ```bash
-.venv-image/bin/jupyter nbconvert --to notebook --execute --ExecutePreprocessor.kernel_name=dlw-image --ExecutePreprocessor.timeout=1800 --output /tmp/v2_check.ipynb notebooks/submission_v2.ipynb && shasum -a 256 model.pkl submission.csv
+.venv-image/bin/jupyter nbconvert --to notebook --execute --ExecutePreprocessor.kernel_name=dlw-image --ExecutePreprocessor.timeout=1800 --output /tmp/v2_check.ipynb notebooks/submission_v2.ipynb && shasum -a 256 notebooks/model.pkl notebooks/submission.csv
 ```
 
-Expected: 36/36 code cells run, 0 errors, no SyntaxWarnings, and
-`model.pkl` sha256 starts `28800e810092ec5a`, `submission.csv` sha256 starts `d04987a6c6b6b1ca`
-(identical to the untouched `submission.ipynb`). Both held at `b2aef0f`.
+Expected: 35/35 code cells run, 0 errors, no SyntaxWarnings, and
+`notebooks/model.pkl` sha256 starts `28800e810092ec5a`, `notebooks/submission.csv` starts `d04987a6c6b6b1ca`
+(identical to the untouched `submission.ipynb`; the notebook writes into `notebooks/` because nbconvert runs it there; root-level `model.pkl`/`submission.csv` are stale dev leftovers).
 
 `src/final_polish.py` rebuilds v2 from `submission.ipynb`; it reproduces every changed code cell.
 

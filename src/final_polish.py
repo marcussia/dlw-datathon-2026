@@ -35,7 +35,7 @@ rep(i, "We neutralised a data trap (blank values are *never* fraud in training: 
     "We neutralised a data trap (a blank `merchant_category` or `new_device` was never fraud: 0 of 113, 0 of 124 rows; other blank columns show no such pattern, 0.9–3.3%) and scored every model on a \"test-like\" slice too.", "exec summary blank-trap sentence (item 2)")
 rep(i, "> - **Ceiling:** about 1 in 6 frauds shows no observable signal; no model catches those (Section 9).",
     "> - **Ceiling:** about 1 in 6 frauds shows no observable signal by our definition; no model catches those (Section 9).\n"
-    "> - **Public leaderboard:** the shipped model scored **0.179**; our best upload, **0.184**, was a less-regularised variant we deliberately did not ship (Section 6.3). The gap to cross-validation (0.234) is explained by the test-set shift (Section 2.4).\n\n"
+    "> - **Public leaderboard:** the shipped model scored **0.179**; our best upload, **0.184**, was a less-regularised variant we deliberately did not ship (Section 6.1). The gap to cross-validation (0.234) is explained by the test-set shift (Section 2.4).\n\n"
     "**Pipeline in one line:** raw CSV → clean (fill blanks with training medians/modes) → 29 features → logistic regression → probability → alert if probability × amount > \\\\$5 → top-3 reason codes.",
     "leaderboard bullet + one-line pipeline (items 8, 17)")
 
@@ -123,16 +123,16 @@ rep(i, "The three that matter are shown here.", esc("""The three that matter are
 | Candidate | PR-AUC | Note |
 |---|---|---|
 | Logistic regression + CatBoost blend | 0.238 | best overall; CatBoost is not in the organisers' sandbox, so it cannot ship |
-| Logistic regression, 29 features (finalist, shipped) | 0.229 | |
 | Logistic regression + LightGBM 50/50 (finalist) | 0.231 | |
+| Logistic regression, 29 features (finalist, shipped) | 0.229 | |
 | CatBoost alone | 0.228 | not shippable |
 | Elastic-net logistic regression | 0.227 | |
 | Bagged logistic regression (50 bags) | 0.226 | |
 | LightGBM, one-hot categories (finalist) | 0.222 | |
 | Stacking: kNN + LightGBM into logistic regression | 0.222 | |
+| Logistic regression, 10 raw columns only | 0.213 | the engineered features' value |
 | XGBoost | 0.212 | |
 | Sklearn gradient boosting / random forest / EBM | 0.209 / 0.201 / 0.208 | |
-| Logistic regression, 10 raw columns only | 0.213 | the engineered features' value |
 | CatBoost with class weights | 0.204 | probabilities inflated (Brier 0.023) |
 | LightGBM DART / LambdaRank / SVM / neural net | 0.190 / 0.191 / 0.180 / 0.177 | |"""), "model search table copied from docs (item 19)")
 
@@ -144,77 +144,6 @@ rep(i, 'colours = [FRAUD_C if "SHIPPED" in n else MODEL_C for n in res["model"]]
 rep(i, 'ax.text(m + s + 0.004, yi, f"{m:.4f} ± {s:.4f}  ({lift})", va="center", fontsize=8)',
     'ax.text(m + s + 0.004, yi, f"{m:.4f} ± {s:.4f}  ({lift})" + ("  shipped" if "SHIPPED" in res["model"].iloc[yi] else ""), va="center", fontsize=8)', "shipped label (item 10)")
 rep(i, 'Model comparison on identical folds — orange = shipped, dashed line = guessing', 'Model comparison on identical folds — black outline = shipped, dashed line = guessing', "title colour wording (item 10)")
-i = find("**What we found**\n\n| Model | Score (PR-AUC, mean ± std)", "markdown")
-setsrc(i, md(esc("""
-**What we found**
-
-| Model | Score (PR-AUC, mean ± std) | vs guessing (lift) |
-|---|---|---|
-| 50/50 mix | 0.235 ± 0.038 | 13.3× |
-| Logistic regression | 0.234 ± 0.037 | 13.3× |
-| Small LightGBM | 0.223 ± 0.044 | 12.6× |
-| Baseline from Section 5 | 0.195 ± 0.045 | 11.1× |
-
-- **Logistic regression and the 50/50 mix are tied.** The gap between them (0.001) is far smaller than the normal variation.
-- The variation ranges of all the models overlap (overlapping error bars), so the ranking can't be decided by a decimal place alone.
-- Logistic regression does best when used as a yes/no flag (best F1 0.299): at its best cut-off it catches about **1 in 4** real positives (recall 0.27), and about **1 in 3** of its flags are correct (precision 0.34).
-- It also has the most accurate probabilities (lowest Brier score, 0.01514).
-
-**Implications:** on our own tests the choice between logistic regression and the mix cannot be made on the score; Section 6.3 adds the one piece of evidence from the test distribution, and Section 6.2 shows why we did not reweight the rare class.
-"""))["source"]); CHANGED.append((i, "6.1 findings trimmed to the CV verdict; leaderboard moved to 6.3 (item 9)"))
-i62f = find("**What we found**\n1. **Reweighting doesn't help the ranking.**", "markdown")
-new63_md = md(esc("""
-### 6.3 Public leaderboard check
-Our uploads of each model's predictions on the 12,000 test rows, scored by the organisers (logged in `docs/leaderboard_log.md`; the two probe rows are copied from `docs/model_comparison_results.md`, not recomputed here). The chart puts each model's practice score (mean ± spread over the 15 folds) next to its public score.
-
-| Model uploaded | Upload | Public PR-AUC |
-|---|---|---|
-| Logistic regression, 29 features (shipped) | #364 | **0.179** |
-| 50/50 mix | #336 | 0.169 |
-| Small LightGBM alone (probe H) | probe, 3 Oct 5:40 PM | 0.167 |
-| Baseline LightGBM, 10 raw columns (Section 5) | #362 | 0.160 |
-| Logistic regression on the 10 raw columns only (no built features) | #748 | 0.151 |
-| Logistic regression with much weaker regularisation (C = 100), a pre-registered probe we did **not** ship | probe F, 3 Oct 5:39 PM | 0.184 |
-
-Every public score sits below its practice score (the test rows are harder: Section 2.4), but the order is the same, and the built features are worth 0.028 on the test set (0.179 vs 0.151).
-
-The team's position on the board (0.184) comes from the last row: the leaderboard shows a team's *best upload*, not its shipped model. We kept the C = 0.2 version because the C = 100 variant scored lower in cross-validation (0.224 vs 0.234) and lost more under the stress tests (−0.025 vs −0.010 PR-AUC; see `docs/model_comparison_results.md`); a +0.005 gain on one public set is inside the noise band (Section 7.2), and picking a model on that would be tuning to the public leaderboard.
-"""))
-new63_code = code('''# 6.3 Practice score (mean ± spread over the 15 folds, from the 6.1 table) next to the public leaderboard score per uploaded model
-public = {   # public PR-AUC per upload: docs/leaderboard_log.md (#364, #336, #362, #748); probes H and F: docs/model_comparison_results.md
-    "logreg_v2 (SHIPPED)": 0.17882, "blend_lr_lgbm": 0.16862, "lgbm_v2": 0.16670, "lgbm_baseline (10 raw)": 0.16046}
-cv_extra = {"LR, 10 raw columns": (0.2198, None, 0.15107),       # CV 3x5 and public from docs/leaderboard_log.md (#748)
-            "LR, C=100 (probe, not shipped)": (0.2244, None, 0.18418)}  # CV 5x5 and public from docs/model_comparison_results.md
-lb = res.set_index("model")[["mean_3x5", "std_3x5"]].copy()
-lb["public"] = lb.index.map(public)
-for k, (m_, s_, p_) in cv_extra.items():
-    lb.loc[k] = [m_, s_, p_]
-lb = lb.sort_values("public")
-labels = {"logreg_v2 (SHIPPED)": "Logistic regression (shipped)", "blend_lr_lgbm": "50/50 mix", "lgbm_v2": "Small LightGBM",
-          "lgbm_baseline (10 raw)": "Baseline LightGBM, raw columns"}
-fig, ax = plt.subplots(figsize=(9, 3.8)); yy = np.arange(len(lb))
-ax.errorbar(lb["mean_3x5"], yy + 0.18, xerr=lb["std_3x5"].fillna(0), fmt="o", color=MODEL_C, ecolor="#9a9a97", capsize=3, label="practice score (CV mean ± spread)")
-ax.scatter(lb["public"], yy - 0.18, color=TEST_C, marker="D", zorder=3, label="public leaderboard score")
-for yi, (m_, p_) in enumerate(zip(lb["mean_3x5"], lb["public"])):
-    ax.plot([p_, m_], [yi - 0.18, yi + 0.18], color="#9a9a97", lw=0.8, zorder=1)
-ax.set_yticks(yy); ax.set_yticklabels([labels.get(k, k) for k in lb.index])
-ax.set_xlabel("PR-AUC"); ax.set_title("Every model scores lower on the public test rows than in practice; the order holds")
-ax.legend(frameon=False, loc="upper left"); [ax.spines[s].set_visible(False) for s in ("top", "right")]
-plt.tight_layout(); plt.show()
-# Takeaway: the drop from practice to public is similar for every model (the test rows are harder), so the comparison between
-# models survives it; the two probe rows are shown for honesty and were not shipped.
-''')
-new63_found = md(esc("""
-**Implications: why logistic regression, not the 50/50 mix**
-1. **On our own tests they are tied.** The 0.001 gap is a rounding error next to the ±0.037 spread between folds; re-running with different splits flips the order.
-2. **On the public test set, logistic regression scored higher: 0.179 vs 0.169 for the mix** (and 0.167 for LightGBM alone). That set is drawn from the shifted test distribution (Section 2.4), so it is the only evidence from data like what we will be graded on, and it points one way.
-3. **Its probabilities are the most accurate** (lowest Brier score, 0.01514); the competition scores probability quality, and Section 7.3 prices every alert as probability × amount.
-4. **It is the best yes/no flagger** of the four (best F1 0.299).
-5. **Fewer moving parts:** one library, and an exact reason for every flag (Section 8.2). Less to explain, and less to break in the organisers' sandbox.
-
-The 50/50 mix is the documented backup (runner-up).
-"""))
-C[i62f + 1:i62f + 1] = [new63_md, new63_code, new63_found]; CHANGED.append((i62f + 1, "new 6.3 Public leaderboard check: table, CV-vs-public chart, 5-bullet justification (item 9)"))
 
 # ============================================================ C10/C11: 6.2 independent axes, colours
 i = find("# 6.2 Same logistic regression", "code")
@@ -254,8 +183,8 @@ for ax in axes: [ax.spines[s].set_visible(False) for s in ("top", "right")]
 plt.tight_layout(); plt.show()''', "7.1 calibration: colour system + log-log reliability panel (items 10, 11)")
 new_pr = code('''# 7.1c Precision-recall curves from pooled OOF predictions: guessing, the LightGBM baseline, the shipped LR
 fig, ax = plt.subplots(figsize=(8, 4.2))
-for name, p_, colour, ls in [("guessing (base rate)", naive, TRAIN_C, ":"), ("LightGBM baseline, raw columns", oof_base, TEST_C, "-"),
-                             ("logistic regression (shipped)", p_best, MODEL_C, "-")]:
+ax.axhline(BASE_RATE, color=TRAIN_C, ls=":", lw=2, label=f"guessing (base rate): PR-AUC {BASE_RATE:.3f}")   # a random ranking has precision = base rate at every recall
+for name, p_, colour, ls in [("LightGBM baseline, raw columns", oof_base, TEST_C, "-"), ("logistic regression (shipped)", p_best, MODEL_C, "-")]:
     pr, rc, _ = precision_recall_curve(y, p_)
     ax.plot(rc, pr, color=colour, ls=ls, lw=2, label=f"{name}: PR-AUC {average_precision_score(y, p_):.3f}")
 pr, rc, thr = precision_recall_curve(y, p_best)
@@ -285,7 +214,6 @@ print(f"for comparison, pooled all-data lift: PR-AUC {average_precision_score(y,
 i = find("**What we found**\n1. **Extra blanks barely hurt.**", "markdown")
 rep(i, "4. **It works on the test-like rows too.** It scores 12.6× better than guessing there (lift), similar to 13.3× on all data. (The raw score is higher, 0.43, only because fraud is more common in those rows, 3.4%, so the lift is the fairer comparison.)",
     "4. **It works on the test-like rows too.** It scores 12.6× better than guessing there (lift), close to the 13.0× pooled lift on all data (0.2288 / 0.0176, computed above; like for like, both pooled). (The raw score is higher, 0.43, only because fraud is more common in those rows, 3.4%, so the lift is the fairer comparison.)", "7.2 like-for-like lift (item 6)")
-rep(i, "the public leaderboard score (0.179, Section 6.1)", "the public leaderboard score (0.179, Section 6.3)", "cross-reference to 6.3 (item 9)")
 
 # ============================================================ C10/D16/D18: 7.3 colours, gains chart, counts grid
 i = find("### 7.3 How much money does the model save?", "markdown")
@@ -312,7 +240,7 @@ for name, fl, colour, mk in marks:
     ax.scatter([100 * fl.mean()], [100 * amt[fl & is_fraud].sum() / total_fraud_dollars], color=colour, marker=mk, s=80, zorder=4,
                edgecolor=SHIP_EDGE, label=f"{name}: flags {100 * fl.mean():.1f}%, catches {100 * amt[fl & is_fraud].sum() / total_fraud_dollars:.1f}% of fraud \\\\$")
 ax.set_xlim(0, 40); ax.set_ylim(0, 100); ax.set_xlabel("% of transactions flagged (disruption)"); ax.set_ylabel("% of fraud dollars caught (benefit)")
-ax.set_title("Disruption vs benefit: the \\\\$500 rule sits near the frontier at 10.6%; our rule flags more and nets more"); ax.legend(frameon=False, fontsize=8, loc="lower right")
+ax.set_title("Ranking by probability × amount catches more fraud dollars than probability alone, at every flag rate"); ax.legend(frameon=False, fontsize=8, loc="lower right")
 [ax.spines[s].set_visible(False) for s in ("top", "right")]
 plt.tight_layout(); plt.show()
 # What would ranking by p x amount catch at the $500 rule's flag rate? (honest like-for-like at 10.6%)
@@ -346,34 +274,17 @@ rep(j, '''# NOTE(Germaine): if any future candidate uses class weights or resamp
 # otherwise p x amount misprices every alert. The shipped LR needs none: no weights, reliability curve ~ diagonal
 # (Section 7.1), and isotonic recalibration made Brier worse in 5x5 CV runs, so it is not applied.''', "neutral NOTE (item 1)")
 i = find("**What we found**\nWe compared strategies by **money saved per 10,000 transactions**", "markdown")
-rep(i, "- **If the fraud team is short-staffed**", "- **Disruption vs benefit (second chart):** at the \\\\$500 rule's own flag rate (10.6%) it sits close to the frontier, so a dollar rule is a strong cheap baseline; our rule flags more (17.0%) and converts that into more fraud dollars caught and more net savings at the \\\\$5 review cost (figures printed under the chart).\n- **If the fraud team is short-staffed**", "7.3 findings: honest gains-chart caption (item 16)")
+rep(i, "- **If the fraud team is short-staffed**", "- **Disruption vs benefit (second chart):** at the \\\\$500 rule's own flag rate (10.6%) it is nearly matched by our ranking (85.7% vs 84.9% of fraud dollars, printed under the chart), so a dollar rule is a strong cheap baseline; our rule flags more (17.0%) and converts that into more fraud dollars caught and more net savings at the \\\\$5 review cost (figures printed under the chart).\n- **If the fraud team is short-staffed**", "7.3 findings: honest gains-chart caption (item 16)")
 
 # ============================================================ C10/C12: 8.1 colours, family view, hour-of-day chart
 i = find("### 8.1 Which signals matter most?", "markdown")
 rep(i, "**How to read it:** red bars push the fraud score **up**, blue bars push it **down**. Longer bar = stronger effect.",
-    "**How to read it:** orange bars push the fraud score **up**, blue bars push it **down**. Longer bar = stronger effect. Overlapping features (for example the night-time flag and the hour-of-day curve) split one effect between them, so the next two charts regroup the signals into families and show the time-of-day effect directly.", "8.1 intro: colours + family/hour charts (items 10, 12)")
+    "**How to read it:** orange bars push the fraud score **up**, blue bars push it **down**. Longer bar = stronger effect. Overlapping features (for example the night-time flag and the hour-of-day curve) split one effect between them, so the second chart shows the time-of-day effect directly: actual vs predicted fraud rate by hour.", "8.1 intro: colours + family/hour charts (items 10, 12)")
 i = find("# 8.1 Global drivers of the shipped LR", "code")
 rep(i, 'color=np.where(top[::-1] > 0, "C3", "C0"),\n                    title="What pushes the fraud score up (red) or down (blue)")',
     'color=np.where(top[::-1] > 0, FRAUD_C, LEGIT_C),\n                    title="What pushes the fraud score up (orange) or down (blue)")', "8.1 drivers chart colours (item 10)")
 rep(i, "plt.tight_layout(); plt.show()\n# Takeaway: velocity", '''plt.tight_layout(); plt.show()
 
-# 8.1b Family view: per row, sum coefficient x standardised value within each family; show each family's mean absolute contribution
-FAMILY = {"velocity": ["transactions_last_24h", "transactions_last_1h", "burst_ratio", "n1_ge3", "n1_ge4", "n24_ge10", "burst_young"],
-          "amount vs account history": ["log_amount", "log_spend", "amt_share_24h", "amt_vs_prev_avg", "log_amt_per_age", "spend_per_txn", "amt_gt500", "big_old"],
-          "time of day": ["transaction_hour", "hour_sin", "hour_cos", "night", "log_amt_x_night"],
-          "device (incl. new-device interactions)": ["new_device", "newdev_young", "log_amt_x_newdev", "night_newdev"], "account age": ["log_age", "age_lt180"]}
-contrib_ = Z_ * clf_.coef_[0]
-fam_rows = {}
-for fam, cols in FAMILY.items():
-    idx = [k for k, n in enumerate(names_) if n in cols]
-    fam_rows[fam] = np.abs(contrib_[:, idx].sum(axis=1)).mean()
-for fam, prefix in [("merchant", "merchant_category_"), ("channel", "transaction_channel_"), ("country", "country_")]:
-    idx = [k for k, n in enumerate(names_) if n.startswith(prefix)]
-    fam_rows[fam] = np.abs(contrib_[:, idx].sum(axis=1)).mean()
-fam = pd.Series(fam_rows).sort_values()
-ax = fam.plot(kind="barh", figsize=(7, 3.4), color=MODEL_C, title="Signal families: average size of each family's push on the fraud score")
-ax.set_xlabel("mean |contribution| per transaction (log-odds)"); [ax.spines[s].set_visible(False) for s in ("top", "right")]
-plt.tight_layout(); plt.show()
 
 # 8.1c Time of day: predicted (OOF) vs actual fraud rate by hour, so the night-time story is visible despite the overlapping features
 by_hour = pd.DataFrame({"actual": y.groupby(train.transaction_hour).mean() * 100, "predicted (OOF)": pd.Series(p_best).groupby(train.transaction_hour.values).mean() * 100})
@@ -381,10 +292,10 @@ ax = by_hour.plot(figsize=(8, 3.2), color=[FRAUD_C, MODEL_C], marker="o", ms=4, 
 ax.set_xlabel("hour of day (0 = midnight)"); ax.set_ylabel("% of transactions that are fraud"); ax.set_xticks(range(0, 24, 2)); ax.legend(frameon=False)
 [ax.spines[s].set_visible(False) for s in ("top", "right")]
 plt.tight_layout(); plt.show()
-# Takeaway: velocity''', "8.1 family-level view + hour-of-day predicted vs actual (item 12)")
+# Takeaway: velocity''', "8.1 hour-of-day predicted vs actual chart (item 12)")
 i = find("**What we found**\n- **Biggest red flags:**", "markdown")
 rep(i, "- **Read the time-of-day bars as a pair.** The night-time flag and the \"time of day\" signals describe the same hours, so the model splits the effect between them and the bars partly cancel (overlapping features). Together they still say what Section 2.3 showed: late-night activity raises risk.",
-    "- **Overlapping features split their effect between them** (night-time flag vs hour-of-day curve; amount vs today's spend vs amount vs usual transaction, correlated 0.86), which is why single bars can point opposite ways. The family chart adds them up: velocity and amount-vs-history are the largest families, then time of day. The hour-of-day chart shows the model's predictions tracking the actual late-night rise in fraud.", "8.1 findings: family + hour charts (item 12)")
+    "- **Overlapping features split their effect between them** (night-time flag vs hour-of-day curve; amount vs today's spend vs amount vs usual transaction, correlated 0.86), which is why single bars can point opposite ways. The hour-of-day chart shows the model's predictions tracking the actual late-night rise in fraud.", "8.1 findings: hour-of-day chart (item 12)")
 
 # ============================================================ C14 + A4: 8.2 merged table, FEAT wording
 i = find("# 8.2 Reason codes", "code")
@@ -433,7 +344,7 @@ axes[1].bar(fair.index, fair["recall"], color=MODEL_C, edgecolor=edges, linewidt
 axes[1].axhline(overall_rec, ls="--", c="gray", lw=1, label=f"all customers: {overall_rec:.2f}"); axes[1].legend(frameon=False, loc="upper right")
 axes[1].set_ylabel("Share of real fraud caught (recall)"); axes[1].set_title("Fraud caught, same country order")
 for ax in axes: ax.set_xlabel(""); [ax.spines[s].set_visible(False) for s in ("top", "right")]
-plt.suptitle("Outlined bars: Singapore and Indonesia", y=1.02); plt.tight_layout(); plt.show()
+plt.suptitle("Honest customers wrongly flagged, and fraud caught, by country (outlined: Singapore and Indonesia)", y=1.02); plt.tight_layout(); plt.show()
 
 # Same check under the RECOMMENDED rule (p x amount > REVIEW_COST), since that is the policy we propose, not a flat 10% cut-off
 rule_flag_ = (p_best * amt > REVIEW_COST)
@@ -453,7 +364,7 @@ display(Markdown(f"Under the recommended rule, honest customers are wrongly flag
                  f"and the rule catches {fair_rule.loc['SG', 'recall (cases)']:.0%} of SG fraud cases ({fair_rule.loc['SG', 'fraud $ caught %']:.0f}% of SG fraud dollars)."))''',
     "8.3 two-panel chart (FPR + recall, SG/ID outlined) and fairness table under the recommended rule (item 13)")
 i = find("**What we found**\n- **Honest customers in some countries get flagged far more often:**", "markdown")
-rep(i, "- **Removing country doesn't hurt in our tests:**", "- **Under the rule we actually recommend** (probability × amount > \\\\$5), the by-country gap is recomputed in the table above; the printed line states the ID-vs-SG ratio under that rule so the fairness claim rests on the policy we propose, not only on a flat cut-off.\n- **Removing country doesn't hurt in our tests:**", "8.3 findings: rule-based fairness (item 13)")
+rep(i, "- **Removing country doesn't hurt in our tests:**", "- **Under the rule we actually recommend** (probability × amount > \\$5) the gap narrows but does not vanish: honest customers are wrongly flagged 24.4% in Indonesia vs 13.9% in Singapore, a 1.8× gap (6.4× at the flat cut-off), and Japan is highest at 34.4% (table and line above). Singapore recall rises to 39% of cases and 83% of fraud dollars, because the rule weights every alert by amount.\n- **Removing country doesn't hurt in our tests:**", "8.3 findings: rule-based fairness (item 13)")
 
 # ============================================================ A5/A7/E20: Section 9
 i = find("## 9. Limitations and next steps", "markdown")
@@ -464,7 +375,7 @@ s = src(i)
 s = s.replace("These frauds are indistinguishable from ordinary transactions on the columns we have, so **no model catches them**; they set a hard ceiling on recall.",
               "By this definition these frauds are indistinguishable from ordinary transactions on the columns we have, so **no model catches them**; they set a hard ceiling on recall.")
 s = s.replace("and no tuning to the public leaderboard, where ranks within ±0.03 are noise.", "and no tuning to the public leaderboard, where we treat ranks within ±0.03 as noise.")
-s = s.replace("**Fairness.** Legitimate ID and AU customers are flagged 6.4× more often than SG ones (Section 8.3); dropping `country` costs nothing in cross-validation.", "**Fairness.** At a flat 10% cut-off legitimate ID and AU customers are flagged 6.4× more often than SG ones; under the recommended expected-loss rule the gap narrows to 1.8× but remains (Section 8.3). Dropping `country` costs nothing in cross-validation.")
+s = s.replace("**Fairness.** Legitimate ID and AU customers are flagged 6.4× more often than SG ones (Section 8.3); dropping `country` costs nothing in cross-validation.", "**Fairness.** At a flat 10% cut-off legitimate ID and AU customers are flagged 6.4× more often than SG ones; under the recommended expected-loss rule the same gap narrows to 1.8×, and the widest gap (Japan vs Singapore) is 2.5× (Section 8.3). Dropping `country` costs nothing in cross-validation.")
 s = s.replace("**Fairness.**", "**Imputation can under-score blank rows.** The fill values (grocery, known device, SG, card present) are the most common values but also low-risk ones, so an imputed row can score slightly below its true risk (1.1% vs 1.8%, Section 7.2). This matters more with 3.5× more blanks in the test set; the injected-blank check in Section 7.2 bounds the cost at about 0.007 PR-AUC. We kept the imputation because the alternative, a \"was blank\" flag, would hand the model the artefact in Section 2.5.\n\n**Fairness.**")
 s = s.replace("a 12-scenario stress test (`src/stress_test.py`) that crashes nothing,", "a 12-scenario stress test (`src/stress_test.py`, table below) that crashes nothing,")
 s = s.rstrip("\n") + esc("""
