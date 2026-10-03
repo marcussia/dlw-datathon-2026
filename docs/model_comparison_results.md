@@ -91,7 +91,7 @@ CatBoost cannot ship. Re-ran the only boosters available in the sandbox, trained
 | LightGBM 3-seed | 0.2215 | 0.3377 | 0.2190 | 0.01526 |
 | XGBoost d3 | 0.2116 | 0.3197 | 0.2106 | 0.01534 |
 | HGB (sklearn) | 0.2087 | 0.3127 | 0.2059 | 0.01532 |
-| **50/50 LR + LightGBM one-hot (`VotingClassifier` soft) — SHIPPED** | **0.2306** | **0.3433** | **0.2306** | **0.01511** |
+| **50/50 LR + LightGBM one-hot (`VotingClassifier` soft) — shipped v1, superseded by LR alone after the public check** | **0.2306** | **0.3433** | **0.2306** | **0.01511** |
 | LR + LightGBM coded | 0.2300 | 0.3441 | 0.2293 | 0.01513 |
 | LR + XGBoost | 0.2261 | 0.3360 | 0.2252 | 0.01516 |
 | (reference, not shippable) LR + CatBoost | 0.2377 | 0.3562 | 0.2367 | 0.01505 |
@@ -229,6 +229,6 @@ from the test distribution. Where the two disagree on test rows (top-2% overlap 
 On the shift slice (amount > 2,000 & age > 1,000; 961 test rows) LightGBM is *less* alarmed than LR (0.018 vs 0.029; train rate 1.7%),
 so the blend's public shortfall is not the big-spender problem — the public frauds look burst/new-device-shaped.
 
-**Recommendation (posted on PR #8): ship LR alone**; tie on CV, leads publicly, needs only scikit-learn at inference, exact reason codes.
+**Decision (Germaine, 3 Oct ~5 PM, PR #8): ship LR alone**; tie on CV, leads publicly, needs only scikit-learn at inference, exact reason codes.
 Blend stays documented as the runner-up (+0.008 on the CV test-like slice, not confirmed publicly). Rank correlation 0.95 → private
 difference will be small either way.
