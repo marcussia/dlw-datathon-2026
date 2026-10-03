@@ -1,0 +1,24 @@
+# Technical Proposal — TrustGuard (Team TODO_TEAM_NAME)
+
+<!-- One page, five fixed sections per docs/report_format.pdf (~520 words). Numbers match notebooks/submission.ipynb
+     (3×5 repeated CV) and docs/leaderboard_log.md. DRAFT — Germaine/Marcus own the framing; edit freely. -->
+
+## 1. Problem Understanding
+
+A bank must stop fraudulent transactions without disrupting honest customers. Fraud is **1.77%** of the 20,000 training transactions (353 cases) but about **4% of the dollars** (average fraud $571 vs $247), so accuracy is the wrong yardstick: never flagging anything is 98.2% accurate and saves nothing. We optimise **PR-AUC** (how well frauds are ranked above legitimate transactions) and report precision, recall and fraud dollars caught at an operating threshold, because every false alarm is a blocked customer. MAS makes the trade-off explicit, noting that "a substantial number of flagged transactions are ultimately legitimate", and its Shared Responsibility Framework mandates a cooling-off after a login from a new device, our strongest signal. The model outputs a calibrated probability so the bank can set that trade-off deliberately.
+
+## 2. Data Processing & Feature Engineering
+
+The data is clean (no duplicates, impossible values or unseen categories) but hides a trap: rows with a blank `merchant_category` or `new_device` are **never** fraud in training (0 of 113 and 0 of 124), an artefact of data generation, and the test set has four times more blanks. We impute every blank with a fixed training median or mode so the model cannot learn "missing means safe". The test set is also shifted: larger amounts, more new devices, and 9% of rows above $2,000 (vs 2.3%), mostly from old accounts that are rarely fraudulent. From the 10 raw columns we build 29 features: log scales for amount, age and spend; amount relative to the day's spend and to account age; velocity bursts; flags where the fraud rate jumps (amount > $500, account < 180 days, 3+ transactions in an hour); and interactions the data shows are multiplicative (new device on a young account: 17% fraud; with 5+ transactions in an hour: 38%). A `big_old` flag marks large purchases on long-standing accounts as low risk, so the test set's loyal big spenders are not flagged.
+
+## 3. Model Selection & Justification
+
+We compared about 65 candidates on identical repeated folds, from logistic regression and gradient boosting (LightGBM, XGBoost) to random forests, neural networks, stacking, class weighting and interaction searches. The shipped model is **logistic regression on the 29 engineered features**: **0.234 ± 0.037 PR-AUC** against **0.195 ± 0.045** for an untuned LightGBM baseline and 0.018 for guessing, a 13× lift. It assumes additive log-odds, which holds once interactions are supplied explicitly. A 50/50 blend with a shallow LightGBM tied in cross-validation and scored lower on the public leaderboard (0.169 vs 0.179), so we kept the simpler model: it needs only scikit-learn at inference, gives exact per-transaction reason codes, and its probabilities are calibrated by construction. Class weights and resampling were rejected because they inflate every probability (Brier 0.023 vs 0.015).
+
+## 4. Evaluation Strategy
+
+With 353 positives a single split swings by ±0.03 PR-AUC, more than the gap between good models, so every number is a mean over **repeated stratified cross-validation**, and models were switched only when a paired fold-by-fold test agreed. We scored three views: plain, with extra blanks injected at the test set's rates (no loss), and on the 20% of training rows most similar to the test set. Calibration was checked with reliability curves (predicted and actual fraud rates match in every decile) and the Brier score (0.0151 vs 0.0173 for the base rate). Operationally we price each alert, flagging when probability × amount exceeds the review cost: 87% of fraud dollars caught at 14% flagged. Under MAS's FEAT principles we also checked fairness: legitimate Indonesian and Australian customers are flagged about six times more often than Singaporeans; dropping `country` costs only 0.002 PR-AUC, so a fairness-constrained variant is cheap.
+
+## 5. Limitations & Risks
+
+About 1 in 6 frauds shows no observable signal (known device, old account, normal amount, no burst) and no model catches it; most are Singapore-based, so domestic recall is low. Without customer IDs or timestamps, per-customer behaviour baselines, the strongest real-world features, are impossible here. The private test set differs from training, so public ranks within ±0.03 are noise and we did not tune to the leaderboard. In production we would add customer history, monitor calibration drift, and retrain on a schedule.
