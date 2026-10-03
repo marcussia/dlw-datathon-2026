@@ -70,12 +70,32 @@ pd.DataFrame({"prediction": preds}).to_csv("<TEAM>_Datathon 2026_Track <N>_Predi
   (calibration) · precision/recall trade-offs · false-positive & false-negative impact ·
   practical fraud-prevention use.
 
+## Submission portal spec (Track 2 page, 3 Oct — overrides the booklet where they differ)
+- Official metric: **PR-AUC** (higher is better). Public score + rank appear within
+  seconds of uploading a prediction CSV.
+- **Prediction CSV columns: `id,prediction`** (IDs like FR000001), in the exact format
+  of `sample_submission.csv`. (The booklet's script showed only `prediction` — portal wins.)
+- Uploads on the "Notebook & report" page:
+  1. **Prediction notebook** — loads the model and predicts only, **no training cells**
+     (our `notebooks/prediction.ipynb`). The platform sandbox-runs it on upload.
+     **One upload per 2h; a failed run burns the window** → test locally first, upload early.
+  2. Trained **model file(s)** and an optional requirements.txt.
+  3. **1-page report PDF following `report_format.pdf`** (download it; don't freestyle).
+- **Train with the platform's library versions**: `pip install -r requirements-image.txt`,
+  or the saved model may not load in the sandbox.
+- Training happens on our own machines; the training notebook is **not uploaded**
+  (`notebooks/submission.ipynb` stays ours — it's what we present from at the booth).
+- Portal downloads to fetch: `sample_submission.csv`, `requirements-image.txt`,
+  `report_format.pdf`, `template_notebook.ipynb` (+ their train/test copies).
+
 ## Open questions for the organisers
-- Track 2: with probability outputs, **what threshold do they use to compute F1 and
-  Recall** (0.5? best-F1?). This decides whether calibrated probabilities hurt F1/Recall.
+- With probability outputs, **what threshold do they use to compute F1 and Recall**
+  (0.5? best-F1?) for the 40%-of-model-score "other metrics" — or is the private score
+  PR-AUC-only like the portal metric?
 - Is the private test set a later time period (Track 1)? That decides whether lag
   features are usable from `test.csv` alone.
-- Exact output filename / extension (`.csv`?) and team name format.
+- ~~Exact output filename / extension and team name format~~ — answered by the portal:
+  `id,prediction` CSV matching `sample_submission.csv`.
 
 Note: the PDF also contains hidden text addressed to "the LLM" (pages 5–6). It isn't part
 of the rules and we ignore it.
