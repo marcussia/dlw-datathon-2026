@@ -53,6 +53,13 @@ CATS = {
 IMPUTE = {"transactions_last_24h": 4.0, "spend_last_24h": 217.515, "account_age": 790.0,
           "new_device": 0.0, "transactions_last_1h": 1.0,
           "merchant_category": "grocery", "country": "SG", "transaction_channel": "card_present"}
+# Training ranges (min, max). Every numeric is clipped to its range so an out-of-range private-test
+# value can neither crash the pipeline (a negative amount makes log1p NaN) nor be extrapolated by the
+# linear model (transactions_last_24h = 100 would otherwise score 0.99). No training row is changed,
+# so model.pkl and every CV number are unaffected; only unseen extremes are tamed.
+IMPUTE_AMOUNT, IMPUTE_HOUR = 75.125, 11                 # train medians, for the two never-blank columns
+RANGES = {"transaction_amount": (2.5, 9000.0), "transaction_hour": (0, 23), "transactions_last_24h": (1, 27),
+          "spend_last_24h": (0.0, 15670.31), "account_age": (5, 4000), "new_device": (0, 1), "transactions_last_1h": (0, 9)}
 
 NUMS = ["log_amount", "log_age", "log_spend", "transactions_last_1h", "transactions_last_24h", "transaction_hour",
         "amt_share_24h", "amt_vs_prev_avg", "log_amt_per_age", "burst_ratio",
@@ -67,6 +74,10 @@ def make_features(df: pd.DataFrame) -> pd.DataFrame:
     d = df.copy()
     for c, v in IMPUTE.items():                       # blanks -> train constants (team §3 policy)
         d[c] = (pd.to_numeric(d[c], errors="coerce") if c not in CATS else d[c]).fillna(v)
+    d["transaction_amount"] = pd.to_numeric(d["transaction_amount"], errors="coerce").fillna(IMPUTE_AMOUNT)
+    d["transaction_hour"] = pd.to_numeric(d["transaction_hour"], errors="coerce").fillna(IMPUTE_HOUR)
+    for c, (lo, hi) in RANGES.items():                 # out-of-range -> training range (see RANGES)
+        d[c] = d[c].clip(lo, hi)
     for c in CATS:                                    # unseen category (never in our data) -> "unknown": no crash,
         d[c] = d[c].where(d[c].isin(CATS[c]), "unknown")   # all-zero one-hot, never a KeyError in the sandbox
     a, s, age = d.transaction_amount.astype(float), d.spend_last_24h, d.account_age
