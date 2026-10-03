@@ -8,7 +8,7 @@ Written 4 Oct 2026 so a fresh session (or a teammate) can continue without any c
   `notebooks/submission.ipynb` (86 cells, main at `6cd6461`) is untouched.
 - PR #38: https://github.com/marcussia/dlw-datathon-2026/pull/38 (MERGEABLE / CLEAN vs main at last check).
 - Review pass (4 Oct, early morning): dropped the 6.3 leaderboard chart/section (title contradicted its rows; 6.1 findings restored from main), fixed the PR-curve guessing line (flat at base rate), dropped the 8.1 family chart (contradicted the 8.3 country finding), 8.3/7.3 wording now quotes printed numbers. 34 cells differ from main.
-- In progress: nothing. Remaining: Germaine says "merge" (or Marcus pastes the 38 cells into `submission.ipynb`).
+- In progress: nothing. Remaining: Germaine says "merge" (or Marcus pastes the 34 cells into `submission.ipynb`).
 
 ## Items done (spec item -> v2 cells changed; cell numbers below are from before the review pass, see `docs/final_polish_changes.md` for the current ones)
 
