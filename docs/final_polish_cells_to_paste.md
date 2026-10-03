@@ -8,7 +8,7 @@ Paste these into `submission.ipynb` at the same positions (see `final_polish_cha
 
 ```markdown
 # TrustGuard — Track 2: Financial Fraud Detection
-NTU DLW Datathon 2026
+NTU DLW Datathon 2026, Team Top 4 MCDs
 
 **Goal:** estimate the probability that a transaction is fraudulent, and turn it into a cost-based alert policy that catches fraud without blocking honest customers.
 
@@ -18,7 +18,7 @@ NTU DLW Datathon 2026
 > - **Test shift:** a classifier tells training from test rows with **AUC 0.668**; test has 3.5× more blanks. We neutralised a data trap (a blank `merchant_category` or `new_device` was never fraud: 0 of 113, 0 of 124 rows; other blank columns show no such pattern, 0.9–3.3%) and scored every model on a "test-like" slice too.
 > - **Value:** alert when *probability × amount* exceeds an assumed \$5 review cost → flags **17.0%** of transactions in our practice tests (about 23% on the test file, whose payments are larger; Section 10), catches **92.1% of fraud dollars**, saves **\$84,309 per 10,000 transactions** vs **\$80,200** for "flag everything over \$500".
 > - **Ceiling:** about 1 in 6 frauds shows no observable signal by our definition; no model catches those (Section 9).
-> - **Public leaderboard:** the shipped model scored **0.179**; our best upload, **0.184**, was a less-regularised variant we deliberately did not ship (Section 6.1). The gap to cross-validation (0.234) is explained by the test-set shift (Section 2.4).
+> - **Public leaderboard:** the shipped model scored **0.179**; our best upload, **0.184**, was a less-regularised variant we deliberately did not ship (both organiser-scored, logged in `docs/leaderboard_log.md`; Section 6.1). The gap to cross-validation (0.234) is explained by the test-set shift (Section 2.4).
 
 **Pipeline in one line:** raw CSV → clean (fill blanks with training medians/modes) → 29 features → logistic regression → probability → alert if probability × amount > \\$5 → top-3 reason codes.
 
@@ -167,6 +167,19 @@ display(Markdown(f"""
 
 ---
 
+## v2 cell 20 (markdown)
+
+```markdown
+**What we found**
+- **New device 7.5%** vs 1.2% on a known device; **account under 90 days 4.4%**; **4+ transactions in the last hour 16.1%**.
+- Riskiest merchants **luxury 5.3%, cash transfer 4.7%, electronics 3.9%**; grocery and transport under 1%.
+
+**Implications:** the classic account-takeover pattern — unfamiliar device, young account, a burst of activity, resellable goods or movable money — which is what the Section 4 features encode. A fraud showing none of these signs looks ordinary (Section 9).
+
+```
+
+---
+
 ## v2 cell 25 (code)
 
 ```python
@@ -265,7 +278,7 @@ display(fills)
 
 ```markdown
 **What we found**
-- Numeric blanks become the training median (e.g. 4 transactions in 24 hours, \$217.52 spend, 790 days of account age); a blank device flag becomes 0 (known device); blank categories become the most common one (grocery, SG, card present).
+- Numeric blanks become the training median (e.g. 4 transactions in 24 hours, \$217.515 spend, 790 days of account age); a blank device flag becomes 0 (known device); blank categories become the most common one (grocery, SG, card present).
 - Every fill value sits in the thick middle of its column's distribution (black marks), and the assertion above confirms no blanks remain in either set.
 
 **Implications:** an imputed row is close to an ordinary row, so the model cannot learn "blank means safe". The evidence for this is in Section 7.2: rows that were originally blank score 1.1% on average against 1.8% for all rows, slightly lower but nowhere near zero. The assumption is that blanks are recording gaps, not fraudster behaviour; if the private set's blanks genuinely signalled fraud we would lose that signal, an acceptable loss since it does not exist in training.
@@ -786,7 +799,7 @@ plt.tight_layout(); plt.show()
   - a payment that's large compared to what the customer spent earlier today
   - a large payment from a new device
 - **Biggest signs of safety:** paying with the physical card present (card-present), and everyday shops like retail.
-- **Overlapping features split their effect between them** (night-time flag vs hour-of-day curve; amount vs today's spend vs amount vs usual transaction, correlated 0.86), which is why single bars can point opposite ways. The hour-of-day chart shows the model's predictions tracking the actual late-night rise in fraud.
+- **Overlapping features split their effect between them** (night-time flag vs hour-of-day curve; amount vs today's spend vs amount vs usual transaction, which overlap heavily), which is why single bars can point opposite ways. The hour-of-day chart shows the model's predictions tracking the actual late-night rise in fraud.
 
 **Implications:** the model has learned the pattern we saw in Section 2.3, where someone gets into another person's account, often from a new device, and quickly makes many payments (account takeover). It hasn't latched onto a quirk of the data (artefact). A fraud analyst would point to the same warning signs.
 

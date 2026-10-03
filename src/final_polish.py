@@ -399,6 +399,18 @@ s = s.rstrip("\n") + esc("""
 """) + "\n"
 setsrc(i, s); CHANGED.append((i, "9: 'by this definition', ±0.03 softened, imputation caveat, stress-test table (items 5, 7, 20)"))
 
+# ============================================================ audit pass (4 Oct): numbers must be printed; team name
+i = find("# TrustGuard", "markdown")
+rep(i, "NTU DLW Datathon 2026\n", "NTU DLW Datathon 2026, Team Top 4 MCDs\n", "team name in the title (audit)")
+rep(i, "our best upload, **0.184**, was a less-regularised variant we deliberately did not ship (Section 6.1).",
+    "our best upload, **0.184**, was a less-regularised variant we deliberately did not ship (both organiser-scored, logged in `docs/leaderboard_log.md`; Section 6.1).", "leaderboard numbers labelled with their source (audit)")
+i = find("**What we found**\n- **New device 7.5%**", "markdown")
+rep(i, "**4+ transactions in the last hour 16.1%** (5+: 21.7%).", "**4+ transactions in the last hour 16.1%**.", "21.7% was true but not printed anywhere (audit)")
+i = find("**What we found**\n- Numeric blanks become the training median", "markdown")
+rep(i, "217.52 spend", "217.515 spend", "match the printed fill value exactly (audit)")
+i = find("**What we found**\n- **Biggest red flags:**", "markdown")
+rep(i, "amount vs today's spend vs amount vs usual transaction, correlated 0.86)", "amount vs today's spend vs amount vs usual transaction, which overlap heavily)", "0.86 correlation was not printed (audit)")
+
 # ============================================================ A1: sweep for names / process notes
 bad = []
 for k, c in enumerate(C):
