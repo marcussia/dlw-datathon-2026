@@ -85,8 +85,23 @@ pd.DataFrame({"prediction": preds}).to_csv("<TEAM>_Datathon 2026_Track <N>_Predi
   or the saved model may not load in the sandbox.
 - Training happens on our own machines; the training notebook is **not uploaded**
   (`notebooks/submission.ipynb` stays ours — it's what we present from at the booth).
-- Portal downloads to fetch: `sample_submission.csv`, `requirements-image.txt`,
-  `report_format.pdf`, `template_notebook.ipynb` (+ their train/test copies).
+
+### Portal downloads (fetched 3 Oct, 2:10 PM — audited)
+- `sample_submission.csv`: 12,000 rows, columns `id,prediction`, **row order identical
+  to `test.csv`**. Portal train/test are byte-identical to our `data/raw/track2` copies.
+- `requirements-image.txt` (committed at repo root): numpy 2.1.3, scipy 1.14.1,
+  pandas 2.2.3, scikit-learn 1.5.2, joblib 1.4.2, xgboost 2.1.3, **lightgbm 4.5.0**,
+  matplotlib 3.9.2, seaborn 0.13.2. Repo has `.venv-image/` built from it — **produce
+  every real `model.pkl` with that kernel**, not the dev `.venv`.
+- `template_notebook.ipynb` (committed in `docs/`) — the sandbox contract, and it
+  differs from the leaderboard CSV format: the sandbox test file has **no `id` column
+  and shuffled rows**; the notebook writes a **single `prediction` column** (same row
+  order) to `DATATHON_OUTPUT_PATH` (default `predictions.csv`), input via
+  `DATATHON_INPUT_PATH`. No internet, no `train.csv`. So: `id,prediction` is for
+  leaderboard CSV uploads only; the prediction notebook must never touch `id`.
+- `report_format.pdf` (committed in `docs/`) — the 1-pager has 5 fixed sections:
+  **1. Problem Understanding · 2. Data Processing & Feature Engineering ·
+  3. Model Selection & Justification · 4. Evaluation Strategy · 5. Limitations & Risks.**
 
 ## Open questions for the organisers
 - With probability outputs, **what threshold do they use to compute F1 and Recall**
